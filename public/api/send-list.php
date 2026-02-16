@@ -150,7 +150,10 @@ $sent = sendTemplateEmail('list-send', $email, [
 ]);
 
 if (!$sent) {
-    $sent = sendEmail($email, $title, $html);
+    $sent = sendEmail($email, $title, $html, [
+        'template_slug' => 'list-send',
+        'category' => 'non_critical',
+    ]);
 }
 
 // Record request for auditing/rate limiting (best-effort).
@@ -172,4 +175,3 @@ if (!$sent) {
 }
 
 jsonResponse(['success' => true]);
-

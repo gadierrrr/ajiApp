@@ -102,7 +102,10 @@ $sent = sendTemplateEmail('quiz-results', $email, [
 ]);
 
 if (!$sent) {
-    $sent = sendEmail($email, $subject, $html);
+    $sent = sendEmail($email, $subject, $html, [
+        'template_slug' => 'quiz-results',
+        'category' => 'non_critical',
+    ]);
 }
 
 if (!$sent) {
@@ -110,4 +113,3 @@ if (!$sent) {
 }
 
 jsonResponse(['success' => true]);
-

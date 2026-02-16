@@ -1,6 +1,7 @@
-# Umami Analytics Integration (Funnel Tracking)
+# Analytics Integration (Umami + Plunk)
 
 This repo uses Umami (Cloud or self-hosted) for product analytics, with a thin client wrapper that is safe when analytics is disabled or blocked.
+It also forwards client tracking events to Plunk via a public-key bridge.
 
 ## Configuration
 
@@ -18,6 +19,8 @@ The script tag is injected in `components/header.php` only when `UMAMI_ENABLED=1
 - `public/assets/js/analytics.js` defines `window.bfTrack(eventName, props)`.
 - If Umami is available, events are forwarded via `window.umami.track(eventName, props)`.
 - A persistent anonymous id cookie `BF_ANON_ID` is created (180 days) and included in event props, plus `authenticated` and `user_id` when available.
+- `public/assets/js/plunk-client.js` wraps `window.bfTrack()` and forwards events to Plunk `/v1/track` using `PLUNK_PUBLIC_KEY`.
+- Runtime Plunk config is exposed from `components/footer.php` in `window.BF_CONFIG`.
 
 ## Funnel event map (minimal schema)
 
@@ -51,6 +54,7 @@ Other utility events (implementation-specific):
 - Umami script injection: `components/header.php`
 - Global user meta for analytics: `components/footer.php`
 - Tracking wrapper + delegated listeners: `public/assets/js/analytics.js`
+- Plunk client event forwarding: `public/assets/js/plunk-client.js`
 - Share tracking: `public/assets/js/share.js`
 - Quiz results landing + tokenized page: `public/quiz-results.php`
 
@@ -58,4 +62,3 @@ Other utility events (implementation-specific):
 
 - Tokenized quiz results pages (`/quiz-results?token=...`) are `noindex` to avoid indexing user-specific pages.
 - The canonical `/quiz-results` route exists as a landing URL and is included in `public/sitemap.php`.
-

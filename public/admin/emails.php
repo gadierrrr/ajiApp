@@ -70,7 +70,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $html = str_replace('{{' . $key . '}}', $value, $html);
                     }
 
-                    if (sendEmail($testEmail, '[TEST] ' . $subject, $html)) {
+                    if (sendEmail($testEmail, '[TEST] ' . $subject, $html, [
+                        'template_slug' => (string) ($template['slug'] ?? ''),
+                        'category' => 'admin_test',
+                    ])) {
                         $message = 'Test email sent to ' . h($testEmail);
                         $messageType = 'success';
                     } else {

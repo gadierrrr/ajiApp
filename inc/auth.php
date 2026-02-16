@@ -57,7 +57,7 @@ function sendMagicLink($email) {
     // Send email
     $appUrl = $_ENV['APP_URL'] ?? 'http://localhost:8082';
     $appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
-    $loginUrl = $appUrl . '/verify.php?token=' . $token;
+    $loginUrl = $appUrl . '/verify?token=' . $token;
 
     // Try to use database template first
     $emailSent = sendTemplateEmail('magic-link', $email, [
@@ -74,7 +74,11 @@ function sendMagicLink($email) {
             <p>This link expires in 15 minutes.</p>
             <p>If you didn't request this, you can safely ignore this email.</p>
         ";
-        $emailSent = sendEmail($email, $subject, $html);
+        $emailSent = sendEmail($email, $subject, $html, [
+            'template_slug' => 'magic-link',
+            'category' => 'critical_auth',
+            'critical' => true,
+        ]);
     }
 
     // Add random delay to prevent timing attacks (100-300ms)
