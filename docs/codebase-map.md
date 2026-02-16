@@ -66,6 +66,24 @@ This doc is a quick navigation guide to the repo after the `public/` docroot mig
   - `public/api/send-quiz-results.php`
   - `public/api/favorites/bulk-add.php`
 
+### Email delivery (Plunk)
+
+- Core service:
+  - `inc/email.php`
+  - `inc/email_provider_plunk.php`
+- Inbound webhook:
+  - `public/api/webhooks/plunk.php`
+- Health probe:
+  - `public/api/health/email.php`
+- Client event bridge:
+  - `public/assets/js/plunk-client.js`
+- Delivery telemetry tables (migration `021`):
+  - `email_messages`
+  - `email_events`
+  - `email_contacts`
+- Ops runbook:
+  - `docs/email-plunk.md`
+
 ### Add a migration
 
 1. Add a new file in `migrations/`

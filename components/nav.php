@@ -2,6 +2,18 @@
 $appName = $appName ?? ($_ENV['APP_NAME'] ?? 'Beach Finder');
 $currentLang = $currentLang ?? getCurrentLanguage();
 $user = $user ?? currentUser();
+$navMapHref = $navMapHref ?? null;
+if (!is_string($navMapHref) || $navMapHref === '') {
+    $requestUri = (string)($_SERVER['REQUEST_URI'] ?? '/');
+    $currentPath = (string)(parse_url($requestUri, PHP_URL_PATH) ?? '/');
+    if ($currentPath === '') {
+        $currentPath = '/';
+    }
+    $queryParams = $_GET;
+    $queryParams['view'] = 'map';
+    $queryString = http_build_query($queryParams);
+    $navMapHref = $currentPath . ($queryString !== '' ? '?' . $queryString : '?view=map');
+}
 ?>
 
 <!-- Skip Links for Accessibility -->
@@ -66,7 +78,10 @@ $user = $user ?? currentUser();
             </div>
 
             <a href="/quiz" class="text-sm text-white/80 hover:text-brand-yellow px-4 py-1 transition-colors" role="menuitem">Quiz</a>
-            <a href="/?view=map" class="text-sm text-white/80 hover:text-brand-yellow px-4 py-1 transition-colors" role="menuitem">Map</a>
+            <a href="<?= h($navMapHref) ?>"
+               class="text-sm text-white/80 hover:text-brand-yellow px-4 py-1 transition-colors"
+               role="menuitem"
+               data-context-map-link>Map</a>
         </div>
 
         <!-- Right Side - Auth & Language -->
@@ -165,7 +180,10 @@ $user = $user ?? currentUser();
                     <i data-lucide="sparkles" class="w-5 h-5" aria-hidden="true"></i>
                     <span>Find My Beach Quiz</span>
                 </a>
-                <a href="/?view=map" class="flex items-center gap-3 text-white/80 hover:text-brand-yellow py-2.5 px-3 rounded-lg hover:bg-white/5 transition-colors" role="menuitem">
+                <a href="<?= h($navMapHref) ?>"
+                   class="flex items-center gap-3 text-white/80 hover:text-brand-yellow py-2.5 px-3 rounded-lg hover:bg-white/5 transition-colors"
+                   role="menuitem"
+                   data-context-map-link>
                     <i data-lucide="map" class="w-5 h-5" aria-hidden="true"></i>
                     <span>Map View</span>
                 </a>
@@ -213,32 +231,65 @@ $user = $user ?? currentUser();
 </nav>
 
 <script>
+function closeMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    const button = document.getElementById('mobile-menu-button');
+    if (!menu || !button) return;
+    menu.classList.add('hidden');
+    button.setAttribute('aria-expanded', 'false');
+}
+
+function closeBeachesDropdown() {
+    const menu = document.getElementById('beaches-dropdown-menu');
+    const button = document.querySelector('#beaches-dropdown button');
+    if (menu) {
+        menu.classList.add('hidden');
+    }
+    if (button) {
+        button.setAttribute('aria-expanded', 'false');
+    }
+}
+
+function closeLangDropdown() {
+    const menu = document.getElementById('lang-dropdown-menu');
+    const button = document.querySelector('#lang-dropdown button');
+    if (menu) {
+        menu.classList.add('hidden');
+    }
+    if (button) {
+        button.setAttribute('aria-expanded', 'false');
+    }
+}
+
 function toggleMobileMenu() {
     const menu = document.getElementById('mobile-menu');
     const button = document.getElementById('mobile-menu-button');
+    if (!menu || !button) return;
     const isOpen = !menu.classList.contains('hidden');
     menu.classList.toggle('hidden');
-    button.setAttribute('aria-expanded', !isOpen);
+    button.setAttribute('aria-expanded', (!isOpen).toString());
 }
 
 function toggleBeachesDropdown() {
     const menu = document.getElementById('beaches-dropdown-menu');
     const button = document.querySelector('#beaches-dropdown button');
+    if (!menu || !button) return;
     const isOpen = !menu.classList.contains('hidden');
     menu.classList.toggle('hidden');
-    button.setAttribute('aria-expanded', !isOpen);
+    button.setAttribute('aria-expanded', (!isOpen).toString());
     // Close lang dropdown if open
-    document.getElementById('lang-dropdown-menu')?.classList.add('hidden');
+    closeLangDropdown();
 }
 
 function toggleLangDropdown() {
     const menu = document.getElementById('lang-dropdown-menu');
     const button = document.querySelector('#lang-dropdown button');
+    if (!menu || !button) return;
     const isOpen = !menu.classList.contains('hidden');
     menu.classList.toggle('hidden');
-    button.setAttribute('aria-expanded', !isOpen);
+    button.setAttribute('aria-expanded', (!isOpen).toString());
     // Close beaches dropdown if open
-    document.getElementById('beaches-dropdown-menu')?.classList.add('hidden');
+    closeBeachesDropdown();
 }
 
 function setLanguage(lang) {
@@ -252,12 +303,21 @@ function setLanguage(lang) {
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) {
     if (!e.target.closest('#beaches-dropdown')) {
-        document.getElementById('beaches-dropdown-menu')?.classList.add('hidden');
-        document.querySelector('#beaches-dropdown button')?.setAttribute('aria-expanded', 'false');
+        closeBeachesDropdown();
     }
     if (!e.target.closest('#lang-dropdown')) {
-        document.getElementById('lang-dropdown-menu')?.classList.add('hidden');
-        document.querySelector('#lang-dropdown button')?.setAttribute('aria-expanded', 'false');
+        closeLangDropdown();
+    }
+    if (!e.target.closest('#mobile-menu') && !e.target.closest('#mobile-menu-button')) {
+        closeMobileMenu();
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeBeachesDropdown();
+        closeLangDropdown();
+        closeMobileMenu();
     }
 });
 </script>

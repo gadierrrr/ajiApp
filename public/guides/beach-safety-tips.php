@@ -12,9 +12,36 @@ $pageDescription = 'Stay safe at Puerto Rico beaches with expert advice on rip c
 $featuredBeaches = query("
     SELECT id, name, municipality, slug
     FROM beaches
-    WHERE slug IN ('balneario-la-monserrate-luquillo-luquillo', 'seven-seas-beach-fajardo', 'crash-boat-beach-aguadilla')
+    WHERE slug LIKE 'balneario-la-monserrate-luquillo-luquillo%'
+       OR slug LIKE 'seven-seas-beach-fajardo%'
+       OR slug LIKE 'crash-boat-beach-aguadilla%'
+    ORDER BY CASE
+        WHEN slug LIKE 'balneario-la-monserrate-luquillo-luquillo%' THEN 1
+        WHEN slug LIKE 'seven-seas-beach-fajardo%' THEN 2
+        WHEN slug LIKE 'crash-boat-beach-aguadilla%' THEN 3
+        ELSE 4
+    END
     LIMIT 3
 ");
+
+// Fallback to known guarded beaches if canonical slug variants are unavailable.
+if (empty($featuredBeaches)) {
+    $featuredBeaches = query("
+        SELECT DISTINCT b.id, b.name, b.municipality, b.slug
+        FROM beaches b
+        INNER JOIN beach_amenities a ON a.beach_id = b.id
+        WHERE a.amenity = 'lifeguard'
+        ORDER BY b.name ASC
+        LIMIT 3
+    ");
+}
+
+$safetyMapBeachIds = array_values(array_filter(array_map(static function ($id): string {
+    if (!is_scalar($id)) {
+        return '';
+    }
+    return trim((string)$id);
+}, array_column($featuredBeaches, 'id'))));
 
 $relatedGuides = [
     ['title' => 'Getting to Puerto Rico Beaches', 'slug' => 'getting-to-puerto-rico-beaches'],
@@ -80,8 +107,6 @@ $extraHead .= breadcrumbSchema([
 ]);
 
 $pageTheme = "guide";
-$skipMapCSS = true;
-$skipMapScripts = true;
 $pageShellMode = "start";
 include APP_ROOT . "/components/page-shell.php";
 ?>
@@ -456,15 +481,14 @@ include APP_ROOT . "/components/page-shell.php";
                         <?php endforeach; ?>
                     </div>
 
-                    <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8 mt-12">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Find Safe Beaches</h2>
-                        <p class="text-gray-700 mb-6">
-                            Browse beaches with lifeguards, safety amenities, and calm conditions perfect for families.
-                        </p>
-                        <a href="/?view=map&has_lifeguard=1#beaches" class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
-                            View Lifeguard-Protected Beaches
-                        </a>
-                    </div>
+                    <?php
+                    $guideMapIds = $safetyMapBeachIds;
+                    $guideMapTitle = 'Find Safe Beaches';
+                    $guideMapDescription = 'Browse beaches with lifeguards, safety amenities, and calm conditions perfect for families.';
+                    $guideMapButtonLabel = 'View Lifeguard-Protected Beaches';
+                    $guideMapEmptyNotice = 'No safe-beach picks from this guide are available on the map right now.';
+                    include APP_ROOT . '/components/guide-map-panel.php';
+                    ?>
                 </div>
 
                 <div class="mt-12 pt-8 border-t border-gray-200">

@@ -141,6 +141,7 @@
             src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"
             integrity="sha384-3WUbXI7T+/GIrWP/5MDMjhzLyHQ+0utF3PnJ7ozD7UeN1/bbZ96Hk+Vvd024VYfW"
             crossorigin="anonymous"></script>
+    <script defer src="/assets/js/context-map-view.js"></script>
     <?php endif; ?>
 
     <?php if (!isset($skipAppScripts) || !$skipAppScripts): ?>
@@ -149,12 +150,18 @@
         authenticated: <?= isAuthenticated() ? '1' : '0' ?>,
         user_id: <?= isAuthenticated() ? json_encode((string)($_SESSION['user_id'] ?? '')) : 'null' ?>
     };
+    window.BF_CONFIG = Object.assign({}, window.BF_CONFIG || {}, {
+        plunkPublicKey: <?= json_encode((string) env('PLUNK_PUBLIC_KEY', '')) ?>,
+        plunkBaseUrl: <?= json_encode((string) env('PLUNK_BASE_URL', 'https://next-api.useplunk.com')) ?>,
+        appEnv: <?= json_encode((string) appEnv()) ?>
+    });
     </script>
     <!-- App JavaScript (defer for non-blocking load) -->
     <script defer src="/assets/js/app.min.js"></script>
     <script defer src="/assets/js/geolocation.js"></script>
     <script defer src="/assets/js/filters.js"></script>
     <script defer src="/assets/js/analytics.js"></script>
+    <script defer src="/assets/js/plunk-client.js"></script>
     <script defer src="/assets/js/share.js"></script>
     <?php endif; ?>
 

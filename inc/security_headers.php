@@ -12,7 +12,7 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
 // Content Security Policy - allows MapLibre, Tailwind CDN, HTMX, Tom Select, Umami Analytics
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com unpkg.com cdn.jsdelivr.net cloud.umami.is; style-src 'self' 'unsafe-inline' cdn.tailwindcss.com unpkg.com cdn.jsdelivr.net fonts.googleapis.com; img-src 'self' data: blob: https://*.cartocdn.com https://*.basemaps.cartocdn.com; font-src 'self' data: fonts.gstatic.com; connect-src 'self' https://*.cartocdn.com https://*.basemaps.cartocdn.com unpkg.com cdn.jsdelivr.net cloud.umami.is api-gateway.umami.dev; worker-src 'self' blob:");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.tailwindcss.com unpkg.com cdn.jsdelivr.net cloud.umami.is; style-src 'self' 'unsafe-inline' cdn.tailwindcss.com unpkg.com cdn.jsdelivr.net fonts.googleapis.com; img-src 'self' data: blob: https://*.cartocdn.com https://*.basemaps.cartocdn.com; font-src 'self' data: fonts.gstatic.com; connect-src 'self' https://*.cartocdn.com https://*.basemaps.cartocdn.com unpkg.com cdn.jsdelivr.net cloud.umami.is api-gateway.umami.dev https://next-api.useplunk.com; worker-src 'self' blob:");
 
 // Performance Headers
 header('X-DNS-Prefetch-Control: on');

@@ -7,7 +7,13 @@ require_once APP_ROOT . '/components/seo-schemas.php';
 
 $pageTitle = 'Surfing in Puerto Rico: Complete Guide for All Levels';
 $pageDescription = 'Expert surfing guide covering best breaks, surf seasons, board rentals, surf schools, and etiquette for Puerto Rico waves from beginners to pros.';
-$surf_beaches = query("SELECT id, name, municipality FROM beaches WHERE id IN (SELECT beach_id FROM beach_tags WHERE tag = 'surfing') LIMIT 5");
+$surf_beaches = query("SELECT id, name, municipality, slug FROM beaches WHERE id IN (SELECT beach_id FROM beach_tags WHERE tag = 'surfing') LIMIT 5");
+$surfMapBeachIds = array_values(array_filter(array_map(static function ($id): string {
+    if (!is_scalar($id)) {
+        return '';
+    }
+    return trim((string)$id);
+}, array_column($surf_beaches, 'id'))));
 $relatedGuides = [['title' => 'Beach Safety Tips', 'slug' => 'beach-safety-tips'],['title' => 'Best Time to Visit', 'slug' => 'best-time-visit-puerto-rico-beaches'],['title' => 'Getting to Puerto Rico Beaches', 'slug' => 'getting-to-puerto-rico-beaches']];
 $faqs = [
     ['question' => 'When is surf season in Puerto Rico?', 'answer' => 'November through March brings the best surf with consistent swells from Atlantic storms. North and west coast beaches like Rincón and Isabela have world-class waves. Summer offers smaller, gentler waves perfect for beginners.'],
@@ -35,8 +41,6 @@ $extraHead .= breadcrumbSchema([
 ]);
 
 $pageTheme = "guide";
-$skipMapCSS = true;
-$skipMapScripts = true;
 $pageShellMode = "start";
 include APP_ROOT . "/components/page-shell.php";
 ?>
@@ -152,11 +156,14 @@ include APP_ROOT . "/components/page-shell.php";
                         </div>
                         <?php endforeach; ?>
                     </div>
-                    <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8 mt-12">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Find Surf Breaks</h2>
-                        <p class="text-gray-700 mb-6">Browse beaches with excellent surfing conditions across Puerto Rico.</p>
-                        <a href="/?view=map&tags[]=surfing#beaches" class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">View Surf Beaches</a>
-                    </div>
+                    <?php
+                    $guideMapIds = $surfMapBeachIds;
+                    $guideMapTitle = 'Find Surf Breaks';
+                    $guideMapDescription = 'Browse beaches with excellent surfing conditions across Puerto Rico.';
+                    $guideMapButtonLabel = 'View Surf Beaches';
+                    $guideMapEmptyNotice = 'No surf beaches from this guide are available on the map right now.';
+                    include APP_ROOT . '/components/guide-map-panel.php';
+                    ?>
                 </div>
                 <div class="mt-12 pt-8 border-t border-gray-200">
                     <h3 class="text-xl font-bold text-gray-900 mb-4">Related Guides</h3>

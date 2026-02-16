@@ -52,7 +52,11 @@ Defined in `.env.example`:
 - `GOOGLE_MAPS_API_KEY`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
-- `RESEND_API_KEY`
+- `PLUNK_SECRET_KEY`
+- `PLUNK_PUBLIC_KEY`
+- `PLUNK_BASE_URL`
+- `PLUNK_WEBHOOK_SECRET`
+- `EMAIL_PROVIDER` (`plunk`)
 - `ANTHROPIC_API_KEY`
 - `APP_ENV` (`dev`, `staging`, `prod`)
 - `APP_DEBUG` (`0` or `1`)
@@ -72,11 +76,29 @@ This codebase includes a lightweight funnel implementation and Umami-compatible 
 - Lead capture:
   - List pages can post to `public/api/send-list.php` ("Send me this list").
   - Quiz results can post to `public/api/send-quiz-results.php` ("Send my matches").
-  - Email delivery uses `RESEND_API_KEY`.
+  - Email delivery uses Plunk API keys.
+  - Webhook receiver: `public/api/webhooks/plunk.php`
+  - Email health probe: `public/api/health/email.php`
 - Tracking:
   - `public/assets/js/analytics.js` defines `window.bfTrack()` and forwards events to Umami when available.
+  - `public/assets/js/plunk-client.js` bridges `window.bfTrack()` events to Plunk `/v1/track` using `PLUNK_PUBLIC_KEY`.
   - Event naming follows the funnel schema (A1/A2/A3, L1/L2, S1/S2, U1...).
   - See `docs/analytics-umami.md` for the event map and implementation details.
+
+## Email health check
+
+Use the email provider probe endpoint to validate Plunk config/connectivity:
+
+```bash
+curl -sS -i https://www.puertoricobeachfinder.com/api/health/email
+```
+
+Expected:
+- `200` when keys are configured and Plunk is reachable/authenticated
+- `503` when config/auth/connectivity is unhealthy
+
+Operational runbook:
+- `docs/email-plunk.md`
 
 ## Migration commands
 
