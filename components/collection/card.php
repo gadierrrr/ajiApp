@@ -9,7 +9,7 @@
  * - $isFavorite (bool)
  */
 
-$viewMode = in_array($viewMode ?? 'cards', ['cards', 'list', 'grid'], true) ? $viewMode : 'cards';
+$cardViewMode = in_array($viewMode ?? 'cards', ['cards', 'list', 'grid'], true) ? $viewMode : 'cards';
 $name = $beach['name'] ?? 'Unknown Beach';
 $slug = $beach['slug'] ?? '';
 $municipality = $beach['municipality'] ?? '';
@@ -41,7 +41,7 @@ if (!empty($beach['safe_for_children'])) {
 $traits = array_slice(array_values(array_unique($traits)), 0, 3);
 ?>
 
-<article class="collection-card collection-card--<?= h($viewMode) ?>">
+<article class="collection-card collection-card--<?= h($cardViewMode) ?>">
     <div class="collection-card__media">
         <a class="collection-card__media-link" href="/beach/<?= h($slug) ?>" aria-label="Open <?= h($name) ?> details">
             <img src="<?= h($imageUrl) ?>" alt="<?= h($name) ?>" loading="lazy" decoding="async">
@@ -65,7 +65,7 @@ $traits = array_slice(array_values(array_unique($traits)), 0, 3);
         <div class="collection-card__top-row">
             <div>
                 <h3 class="collection-card__title">
-                    <a href="/beach/<?= h($slug) ?>"><?= h($name) ?></a>
+                    <a class="collection-card__title-link" href="/beach/<?= h($slug) ?>"><?= h($name) ?></a>
                 </h3>
                 <p class="collection-card__location">📍 <?= h($municipality) ?>, Puerto Rico</p>
             </div>
@@ -80,7 +80,7 @@ $traits = array_slice(array_values(array_unique($traits)), 0, 3);
             <?php endif; ?>
         </div>
 
-        <?php if ($viewMode !== 'list'): ?>
+        <?php if ($cardViewMode !== 'list'): ?>
         <p class="collection-card__excerpt"><?= h($excerpt) ?></p>
         <?php endif; ?>
 

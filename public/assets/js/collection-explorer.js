@@ -6,6 +6,8 @@
     const sortSelect = document.getElementById('ce-sort');
     const mapLink = document.getElementById('ce-map-link');
     const resultsContainer = document.getElementById('collection-results');
+    const clearFiltersBtn = root.querySelector('[data-ce-action="clear-filters"]');
+    const filterCountBadge = root.querySelector('[data-ce-filter-count]');
     const defaultSort = root.dataset.defaultSort || 'rating';
     const defaultLimit = parseInt(root.dataset.defaultLimit || '15', 10);
     const csrfToken = root.dataset.csrf || '';
@@ -62,7 +64,7 @@
         }
 
         const view = params.get('view');
-        if (view && ['cards', 'list', 'grid'].includes(view)) {
+        if (view && ['cards', 'list', 'grid', 'map'].includes(view)) {
             state.view = view;
         }
 
@@ -110,6 +112,41 @@
         return params;
     }
 
+    function getMapContext() {
+        return {
+            mode: 'collection',
+            collection: state.collection,
+            filters: {
+                q: state.q,
+                tags: [...state.tags],
+                municipality: state.municipality,
+                sort: state.sort,
+                include_all: state.includeAll
+            },
+            listViewId: 'collection-list-view',
+            mapViewId: 'collection-map-view',
+            mapContainerId: 'collection-map-container',
+            mapEmptyId: 'collection-map-empty',
+            mapErrorId: 'collection-map-error',
+            mapLoadingId: 'collection-map-loading',
+            autoScroll: false,
+            updateUrl: false
+        };
+    }
+
+    function syncMapUi() {
+        if (!window.BFContextMapView || typeof window.BFContextMapView.setContext !== 'function') {
+            return;
+        }
+        const context = getMapContext();
+        window.BFContextMapView.setContext(context);
+        if (state.view === 'map') {
+            window.BFContextMapView.showMapView({ context, updateUrl: false, scroll: false });
+        } else {
+            window.BFContextMapView.showListView({ context, updateUrl: false, scroll: false });
+        }
+    }
+
     function syncControls() {
         if (searchInput) {
             searchInput.value = state.q;
@@ -132,7 +169,25 @@
         });
 
         if (mapLink) {
-            mapLink.href = '/?' + paramsForMap().toString();
+            mapLink.href = window.location.pathname + '?' + paramsForMap().toString();
+        }
+
+        const activeFilterCount = state.tags.length + (state.includeAll ? 1 : 0);
+        if (filterCountBadge) {
+            if (activeFilterCount > 0) {
+                filterCountBadge.textContent = activeFilterCount + ' active';
+                filterCountBadge.hidden = false;
+            } else {
+                filterCountBadge.hidden = true;
+            }
+        }
+
+        if (clearFiltersBtn) {
+            clearFiltersBtn.disabled = activeFilterCount === 0;
+        }
+
+        if (window.BFContextMapView && typeof window.BFContextMapView.setContext === 'function') {
+            window.BFContextMapView.setContext(getMapContext());
         }
     }
 
@@ -164,6 +219,7 @@
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
                 window.lucide.createIcons();
             }
+            syncMapUi();
         } catch (error) {
             console.error(error);
         } finally {
@@ -176,6 +232,13 @@
         syncControls();
         syncUrl();
         fetchResults();
+    }
+
+    function clearTagFiltersOnly() {
+        state.tags = [];
+        state.includeAll = false;
+        state.page = 1;
+        refresh();
     }
 
     function debounce(fn, wait) {
@@ -271,8 +334,9 @@
         }
 
         if (action === 'set-view') {
+            event.preventDefault();
             const view = target.dataset.ceView || 'cards';
-            if (!['cards', 'list', 'grid'].includes(view)) return;
+            if (!['cards', 'list', 'grid', 'map'].includes(view)) return;
             state.view = view;
             state.page = 1;
             refresh();
@@ -288,6 +352,11 @@
             state.includeAll = false;
             state.page = 1;
             refresh();
+            return;
+        }
+
+        if (action === 'clear-filters') {
+            clearTagFiltersOnly();
             return;
         }
 
@@ -309,4 +378,5 @@
 
     parseStateFromUrl();
     syncControls();
+    syncMapUi();
 })();

@@ -74,7 +74,6 @@ $breadcrumbs = [
 ];
 
 $bodyVariant = 'collection-dark';
-$skipMapCSS = true;
 include APP_ROOT . '/components/header.php';
 ?>
 <?php include APP_ROOT . '/components/collection/explorer.php'; ?>
@@ -269,7 +268,7 @@ include APP_ROOT . '/components/header.php';
             Find Family Beaches on the Map
         </h2>
         <div class="text-center">
-            <a href="/?view=map&tags[]=family-friendly#beaches" class="inline-flex items-center gap-2 bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-6 py-3 rounded-lg font-medium transition-colors">
+            <a href="?view=map&collection=best-family-beaches#top-beaches" class="inline-flex items-center gap-2 bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-6 py-3 rounded-lg font-medium transition-colors">
                 <span>🗺️</span>
                 <span>View Family Beaches Map</span>
             </a>
@@ -292,7 +291,6 @@ include APP_ROOT . '/components/header.php';
 </div>
 
 <?php
-$skipMapScripts = true;
 $skipAppScripts = true;
 $extraScripts = '<script defer src="/assets/js/collection-explorer.min.js"></script>';
 ?>

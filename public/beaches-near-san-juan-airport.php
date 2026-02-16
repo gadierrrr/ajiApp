@@ -176,7 +176,6 @@ $extraHead .= <<<BREADCRUMB
 BREADCRUMB;
 
 $bodyVariant = 'collection-dark';
-$skipMapCSS = true;
 include APP_ROOT . '/components/header.php';
 ?>
 <?php include APP_ROOT . '/components/collection/explorer.php'; ?>
@@ -724,7 +723,6 @@ include APP_ROOT . '/components/header.php';
 </div>
 
 <?php
-$skipMapScripts = true;
 $skipAppScripts = true;
 $extraScripts = '<script defer src="/assets/js/collection-explorer.min.js"></script>';
 ?>

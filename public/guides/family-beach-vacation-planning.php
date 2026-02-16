@@ -6,7 +6,13 @@ require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/components/seo-schemas.php';
 $pageTitle = 'Family Beach Vacation Planning Guide for Puerto Rico';
 $pageDescription = 'Plan the perfect family beach trip with kid-friendly beaches, sample itineraries, budgeting tips, accommodation recommendations, and activities for all ages.';
-$family_beaches = query("SELECT id, name, municipality FROM beaches WHERE id IN (SELECT beach_id FROM beach_amenities WHERE amenity IN ('lifeguards','restrooms','showers')) LIMIT 5");
+$family_beaches = query("SELECT id, name, municipality, slug FROM beaches WHERE id IN (SELECT beach_id FROM beach_amenities WHERE amenity IN ('lifeguards','restrooms','showers')) LIMIT 5");
+$familyMapBeachIds = array_values(array_filter(array_map(static function ($id): string {
+    if (!is_scalar($id)) {
+        return '';
+    }
+    return trim((string)$id);
+}, array_column($family_beaches, 'id'))));
 $relatedGuides = [['title' => 'Beach Safety Tips', 'slug' => 'beach-safety-tips'],['title' => 'Beach Packing List', 'slug' => 'beach-packing-list'],['title' => 'Getting to Puerto Rico Beaches', 'slug' => 'getting-to-puerto-rico-beaches']];
 $faqs = [['question' => 'What are the best family-friendly beaches in Puerto Rico?', 'answer' => 'Top family beaches include Balneario de Luquillo (calm water, facilities, food vendors), Balneario de Carolina (near San Juan, lifeguards), Seven Seas Fajardo (shallow water, shade), and Flamenco Beach Culebra (stunning beauty, calm conditions). Look for beaches with lifeguards and amenities.'],['question' => 'Is Puerto Rico safe for families with young children?', 'answer' => 'Yes! Puerto Rico is very family-friendly. Stay at balnearios (public beaches) with lifeguards for maximum safety. Book family-oriented hotels/resorts with kids clubs. Use common sense with valuables and stay in tourist areas. Puerto Ricans are welcoming to families.'],['question' => 'What is a realistic budget for a family beach vacation to Puerto Rico?', 'answer' => 'Budget $2,000-4,000 for a family of 4 for one week including flights ($800-1,600), car rental ($350-500), hotel ($700-1,400), food ($500-800), and activities ($300-500). Condo rentals with kitchens save money on dining.'],['question' => 'What activities beyond beaches keep kids entertained?', 'answer' => 'El Yunque Rainforest, bioluminescent bay kayaking, Camuy Caves, Arecibo Observatory, Old San Juan forts (Castillo San Felipe del Morro), Toro Verde zipline park, snorkeling trips, and wildlife refuges. Puerto Rico offers excellent variety beyond beaches.'],['question' => 'When is the best time for a family beach vacation in Puerto Rico?', 'answer' => 'April-May and November offer great weather with fewer crowds and lower prices than peak winter. Summer (June-August) aligns with school vacations but brings rain risk and humidity. Winter (Dec-March) has perfect weather but highest prices and crowds.']];
 
@@ -33,8 +39,6 @@ $extraHead .= breadcrumbSchema([
 ]);
 
 $pageTheme = "guide";
-$skipMapCSS = true;
-$skipMapScripts = true;
 $pageShellMode = "start";
 include APP_ROOT . "/components/page-shell.php";
 ?>
@@ -93,11 +97,14 @@ include APP_ROOT . '/components/hero-guide.php';
 <div class="space-y-6"><?php foreach($faqs as $faq):?>
 <div class="border-l-4 border-green-600 pl-4"><h3 class="text-xl font-bold text-gray-900 mb-2"><?php echo h($faq['question']);?></h3><p class="text-gray-700"><?php echo h($faq['answer']);?></p></div>
 <?php endforeach;?></div>
-<div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8 mt-12">
-<h2 class="text-2xl font-bold text-gray-900 mb-4">Find Family-Friendly Beaches</h2>
-<p class="text-gray-700 mb-6">Browse beaches with lifeguards, facilities, and calm water perfect for families.</p>
-<a href="/?view=map&has_lifeguard=1#beaches" class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">View Family Beaches</a>
-</div></div>
+<?php
+$guideMapIds = $familyMapBeachIds;
+$guideMapTitle = 'Find Family-Friendly Beaches';
+$guideMapDescription = 'Browse beaches with lifeguards, facilities, and calm water perfect for families.';
+$guideMapButtonLabel = 'View Family Beaches';
+$guideMapEmptyNotice = 'No family-oriented beaches from this guide are available on the map right now.';
+include APP_ROOT . '/components/guide-map-panel.php';
+?></div>
 <div class="mt-12 pt-8 border-t border-gray-200"><h3 class="text-xl font-bold text-gray-900 mb-4">Related Guides</h3>
 <div class="related-guides-grid"><?php foreach($relatedGuides as $guide):?>
 <a href="/guides/<?php echo h($guide['slug']);?>" class="related-guide-card"><span class="related-guide-title"><?php echo h($guide['title']);?></span></a>

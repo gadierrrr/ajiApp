@@ -141,6 +141,7 @@
             src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"
             integrity="sha384-3WUbXI7T+/GIrWP/5MDMjhzLyHQ+0utF3PnJ7ozD7UeN1/bbZ96Hk+Vvd024VYfW"
             crossorigin="anonymous"></script>
+    <script defer src="/assets/js/context-map-view.js"></script>
     <?php endif; ?>
 
     <?php if (!isset($skipAppScripts) || !$skipAppScripts): ?>

@@ -74,7 +74,6 @@ $breadcrumbs = [
 ];
 
 $bodyVariant = 'collection-dark';
-$skipMapCSS = true;
 include APP_ROOT . '/components/header.php';
 ?>
 <?php include APP_ROOT . '/components/collection/explorer.php'; ?>
@@ -214,7 +213,7 @@ include APP_ROOT . '/components/header.php';
             Find Snorkeling Beaches on the Map
         </h2>
         <div class="text-center">
-            <a href="/?view=map&tags[]=snorkeling#beaches" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+            <a href="?view=map&collection=best-snorkeling-beaches#top-beaches" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                 <span>🗺️</span>
                 <span>View Snorkeling Beaches Map</span>
             </a>
@@ -237,7 +236,6 @@ include APP_ROOT . '/components/header.php';
 </div>
 
 <?php
-$skipMapScripts = true;
 $skipAppScripts = true;
 $extraScripts = '<script defer src="/assets/js/collection-explorer.min.js"></script>';
 ?>
