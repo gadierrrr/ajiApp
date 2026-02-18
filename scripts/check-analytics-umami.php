@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 
 function usage(): void {
-    fwrite(STDOUT, "Usage: php scripts/check-analytics-umami.php [--url=<url>] [--urls=<comma-separated-urls>] [--expect-website-id=<id>] [--expect-script-host=<host>] [--timeout=<seconds>] [--json]\n");
+    fwrite(STDOUT, "Usage: php scripts/check-analytics-umami.php [--url=<url>] [--urls=<comma-separated-urls>] [--expect-website-id=<id>] [--expect-script-host=<host>] [--timeout=<seconds>] [--require-analytics-wrapper] [--json]\n");
 }
 
 function parseStatusCode(array $headers): int {
@@ -140,6 +140,7 @@ $options = getopt('', [
     'expect-website-id::',
     'expect-script-host::',
     'timeout::',
+    'require-analytics-wrapper',
     'json',
     'help',
 ]);
@@ -157,6 +158,7 @@ if ($timeout < 1) {
 $expectedWebsiteId = isset($options['expect-website-id']) ? trim((string) $options['expect-website-id']) : '';
 $expectedScriptHost = isset($options['expect-script-host']) ? trim((string) $options['expect-script-host']) : '';
 $emitJson = isset($options['json']);
+$requireAnalyticsWrapper = isset($options['require-analytics-wrapper']);
 $urls = normalizeUrlsFromOptions($options);
 
 $allOk = true;
@@ -190,7 +192,7 @@ foreach ($urls as $url) {
     $inspection = inspectHtml($fetch['body']);
     $entry = array_merge($entry, $inspection);
 
-    if (!$inspection['analytics_wrapper_present']) {
+    if ($requireAnalyticsWrapper && !$inspection['analytics_wrapper_present']) {
         $entry['ok'] = false;
         $entry['errors'][] = 'Missing /assets/js/analytics.js script';
     }
