@@ -13,6 +13,7 @@ Set these in `.env` (see `.env.example`):
 - `UMAMI_DOMAINS=puertoricobeachfinder.com,www.puertoricobeachfinder.com` (optional)
 
 The script tag is injected in `components/header.php` only when `UMAMI_ENABLED=1` and `UMAMI_WEBSITE_ID` is non-empty.
+`inc/security_headers.php` also extends CSP allowlists using `UMAMI_SCRIPT_URL` host when Umami is enabled.
 
 ## Client wrapper
 
@@ -21,6 +22,8 @@ The script tag is injected in `components/header.php` only when `UMAMI_ENABLED=1
 - A persistent anonymous id cookie `BF_ANON_ID` is created (180 days) and included in event props, plus `authenticated` and `user_id` when available.
 - `public/assets/js/plunk-client.js` wraps `window.bfTrack()` and forwards events to Plunk `/v1/track` using `PLUNK_PUBLIC_KEY`.
 - Runtime Plunk config is exposed from `components/footer.php` in `window.BF_CONFIG`.
+- In `prod`, `bfTrack()` logs a one-time console warning when Umami is unavailable.
+- Add `?bf_analytics_probe=1` to any page URL to fire `health_analytics_probe` and send a client probe beacon to `/api/health/analytics.php`.
 
 ## Funnel event map (minimal schema)
 
@@ -52,11 +55,45 @@ Other utility events (implementation-specific):
 ## Implementation references
 
 - Umami script injection: `components/header.php`
+- Dynamic CSP host allowlist: `inc/security_headers.php`
 - Global user meta for analytics: `components/footer.php`
 - Tracking wrapper + delegated listeners: `public/assets/js/analytics.js`
 - Plunk client event forwarding: `public/assets/js/plunk-client.js`
 - Share tracking: `public/assets/js/share.js`
 - Quiz results landing + tokenized page: `public/quiz-results.php`
+- Analytics health endpoint: `public/api/health/analytics.php`
+- CI/deploy tag check: `scripts/check-analytics-umami.php`
+- Synthetic browser smoke script: `scripts/synthetic-analytics-probe.sh`
+
+## Operational checks
+
+Configuration + page probe:
+
+```bash
+curl -sS "https://www.puertoricobeachfinder.com/api/health/analytics.php?page_probe=1&network_probe=1"
+```
+
+Expected in production:
+- `ok: true`
+- `checks.config.enabled: true`
+- `checks.page_probe.umami_tag_present: true`
+- `checks.page_probe.umami_website_id_present: true`
+
+Rendered HTML guardrail:
+
+```bash
+php scripts/check-analytics-umami.php \
+  --urls=https://www.puertoricobeachfinder.com/,https://www.puertoricobeachfinder.com/best-beaches \
+  --expect-script-host=cloud.umami.is
+```
+
+Synthetic browser probe (headless):
+
+```bash
+scripts/synthetic-analytics-probe.sh https://www.puertoricobeachfinder.com
+```
+
+This loads a page with `?bf_analytics_probe=1`, then verifies `/api/health/analytics.php?page_probe=1` reports a fresh client probe and Umami availability.
 
 ## Notes
 

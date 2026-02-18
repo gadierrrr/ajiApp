@@ -100,6 +100,29 @@ Expected:
 Operational runbook:
 - `docs/email-plunk.md`
 
+## Analytics health checks
+
+Use the analytics probe endpoint to validate Umami config and rendered script injection:
+
+```bash
+curl -sS "https://www.puertoricobeachfinder.com/api/health/analytics.php?page_probe=1&network_probe=1"
+```
+
+Guardrail check for rendered HTML:
+
+```bash
+php scripts/check-analytics-umami.php --url=https://www.puertoricobeachfinder.com
+```
+
+Synthetic browser probe (headless Chrome/Chromium required):
+
+```bash
+scripts/synthetic-analytics-probe.sh https://www.puertoricobeachfinder.com
+```
+
+Operational runbook:
+- `docs/analytics-umami.md`
+
 ## Migration commands
 
 ```bash
