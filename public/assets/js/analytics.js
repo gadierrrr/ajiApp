@@ -9,9 +9,63 @@
 
 (function () {
   "use strict";
+  var umamiUnavailableWarned = false;
+  var clientProbeSent = false;
 
   function getMeta() {
     return window.BeachFinderMeta || { authenticated: 0 };
+  }
+
+  function getConfig() {
+    return window.BF_CONFIG || {};
+  }
+
+  function isProdRuntime() {
+    return getConfig().appEnv === "prod";
+  }
+
+  function postClientProbe(eventName, umamiAvailable) {
+    if (clientProbeSent) return;
+    clientProbeSent = true;
+
+    var payload = {
+      event_name: String(eventName || "unknown"),
+      path: window.location.pathname,
+      umami_available: !!umamiAvailable,
+    };
+
+    try {
+      if (navigator.sendBeacon) {
+        var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+        navigator.sendBeacon("/api/health/analytics.php?client_probe=1", blob);
+        return;
+      }
+    } catch (e) {}
+
+    try {
+      fetch("/api/health/analytics.php?client_probe=1", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true,
+        credentials: "same-origin",
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  function warnUmamiUnavailable(eventName) {
+    if (!isProdRuntime() || umamiUnavailableWarned) return;
+    umamiUnavailableWarned = true;
+    postClientProbe(eventName, false);
+
+    try {
+      if (typeof console !== "undefined" && typeof console.warn === "function") {
+        console.warn("[analytics] bfTrack called but window.umami is unavailable", {
+          event_name: eventName || "",
+          path: window.location.pathname,
+        });
+      }
+    } catch (e) {}
   }
 
   function safeJsonParse(value, fallback) {
@@ -123,6 +177,8 @@
       const payload = baseProps(props);
       if (window.umami && typeof window.umami.track === "function") {
         window.umami.track(eventName, payload);
+      } else {
+        warnUmamiUnavailable(eventName);
       }
     } catch (e) {
       // Never throw from analytics.
@@ -263,6 +319,26 @@
     } catch (e) {}
   }
 
+  function initSyntheticProbe() {
+    var url;
+    try {
+      url = new URL(window.location.href);
+    } catch (e) {
+      return;
+    }
+
+    if (url.searchParams.get("bf_analytics_probe") !== "1") return;
+
+    window.setTimeout(function () {
+      var umamiAvailable = !!(window.umami && typeof window.umami.track === "function");
+      postClientProbe("health_analytics_probe", umamiAvailable);
+      window.bfTrack("health_analytics_probe", {
+        source: "synthetic_probe",
+        path: window.location.pathname,
+      });
+    }, 1200);
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     ensureAnonId();
     trackSignupAttribution();
@@ -271,6 +347,6 @@
     initFavoriteTrackingFromHtmx();
     initSendListForms();
     initWelcomePopupSuppression();
+    initSyntheticProbe();
   });
 })();
-

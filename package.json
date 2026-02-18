@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "check:design": "node scripts/lint-design-system.js",
+    "check:analytics": "php scripts/check-analytics-umami.php",
     "build:css": "./scripts/build-css.sh",
     "build:tailwind": "npx tailwindcss -i ./public/assets/css/tailwind-input.css -o ./public/assets/css/tailwind.min.css --minify",
     "build:js": "npx terser public/assets/js/app.js -o public/assets/js/app.min.js && npx terser public/assets/js/collection-explorer.js -o public/assets/js/collection-explorer.min.js",

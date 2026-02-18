@@ -36,6 +36,10 @@ jobs:
           ANTHROPIC_API_KEY=test-anthropic-key
           APP_ENV=dev
           APP_DEBUG=0
+          UMAMI_ENABLED=1
+          UMAMI_SCRIPT_URL=https://cloud.umami.is/script.js
+          UMAMI_WEBSITE_ID=ci-umami-website-id
+          UMAMI_DOMAINS=localhost,127.0.0.1
           ENV
 
       - name: PHP lint
@@ -64,6 +68,19 @@ jobs:
         run: |
           php scripts/migrate.php
           php scripts/migrate.php --check
+
+      - name: Verify analytics guardrails
+        run: |
+          php -S 127.0.0.1:8082 -t public scripts/dev-router.php >/tmp/beach-finder-ci-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          sleep 2
+          php scripts/check-analytics-umami.php \
+            --urls=http://127.0.0.1:8082/,http://127.0.0.1:8082/best-beaches \
+            --expect-website-id=ci-umami-website-id \
+            --expect-script-host=cloud.umami.is
+          curl -fsS "http://127.0.0.1:8082/api/health/analytics.php" >/tmp/analytics-health.json
+          php -r '$d=json_decode(file_get_contents("/tmp/analytics-health.json"), true); if(!is_array($d) || ($d["ok"] ?? false) !== true){fwrite(STDERR, "Analytics health endpoint returned unhealthy status\n"); exit(1);} echo "Analytics health endpoint OK\n";'
 
       - name: Ensure no hardcoded Google keys in active code
         run: |
