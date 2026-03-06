@@ -4,6 +4,13 @@ module.exports = {
     "./**/*.php",
     "./public/assets/js/**/*.js"
   ],
+  safelist: [
+    // Hero filter chip per-category colors (dynamically assembled in index.php)
+    'bg-emerald-500/20', 'border-emerald-400/40', 'hover:bg-emerald-500/30', 'hover:border-emerald-400/60', 'text-emerald-300/70',
+    'bg-teal-500/20', 'border-teal-400/40', 'hover:bg-teal-500/30', 'hover:border-teal-400/60', 'text-teal-300/70',
+    'bg-amber-500/20', 'border-amber-400/40', 'hover:bg-amber-500/30', 'hover:border-amber-400/60', 'text-amber-300/70',
+    'bg-rose-500/20', 'border-rose-400/40', 'hover:bg-rose-500/30', 'hover:border-rose-400/60', 'text-rose-300/70',
+  ],
   darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {

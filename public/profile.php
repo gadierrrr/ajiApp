@@ -12,20 +12,32 @@ require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
 require_once APP_ROOT . '/inc/weather.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
+require_once APP_ROOT . '/inc/i18n.php';
 
 // Require authentication
 requireAuth();
 
 $user = currentUser();
-$pageTitle = 'My Profile';
-$pageDescription = 'View and manage your Beach Finder profile, favorites, reviews, and photos.';
+$pageTitle = __('profile.my_profile');
+$pageDescription = __('profile.description');
 
 // Get active tab
 $activeTab = $_GET['tab'] ?? 'favorites';
 $validTabs = ['favorites', 'reviews', 'photos', 'checkins'];
-if (!in_array($activeTab, $validTabs)) {
+if (!in_array($activeTab, $validTabs, true)) {
     $activeTab = 'favorites';
 }
+
+$deleteError = trim((string) ($_GET['delete_error'] ?? ''));
+$deleteErrorMessages = [
+    'csrf' => __('profile.delete_error_csrf'),
+    'email' => __('profile.delete_error_email'),
+    'phrase' => __('profile.delete_error_phrase'),
+    'method' => __('profile.delete_error_method'),
+    'last_admin' => __('profile.delete_error_last_admin'),
+    'failed' => __('profile.delete_error_failed'),
+];
 
 // Get user's favorite beaches
 $favorites = query(
@@ -101,8 +113,8 @@ $progress = getExplorerProgress($beachesVisited, $explorerLevel);
 
 // Breadcrumbs
 $breadcrumbs = [
-    ['name' => 'Home', 'url' => '/'],
-    ['name' => 'My Profile']
+    ['name' => __('nav.home'), 'url' => '/'],
+    ['name' => __('profile.my_profile')]
 ];
 
 include APP_ROOT . '/components/header.php';
@@ -133,7 +145,7 @@ include APP_ROOT . '/components/header.php';
             <div class="flex-1 text-center sm:text-left">
                 <div class="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
                     <h1 class="text-2xl font-bold text-white">
-                        <?= h($user['name'] ?? 'Beach Explorer') ?>
+                        <?= h($user['name'] ?? __('profile.beach_explorer')) ?>
                     </h1>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border <?= h($levelInfo['colorClass']) ?>">
                         <span><?= h($levelInfo['icon']) ?></span>
@@ -142,26 +154,26 @@ include APP_ROOT . '/components/header.php';
                 </div>
                 <p class="text-gray-400 mt-1">
                     <i data-lucide="calendar" class="w-4 h-4 inline-block mr-1"></i>
-                    Member since <?= $memberSince ?>
+                    <?= h(__('profile.member_since', ['date' => $memberSince])) ?>
                 </p>
 
                 <!-- Stats -->
                 <div class="flex flex-wrap justify-center sm:justify-start gap-6 mt-4">
                     <div class="text-center">
                         <div class="text-2xl font-bold text-brand-yellow"><?= $stats['favorites'] ?></div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide">Favorites</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide"><?= h(__('profile.favorites')) ?></div>
                     </div>
                     <div class="text-center">
                         <div class="text-2xl font-bold text-amber-400"><?= $stats['reviews'] ?></div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide">Reviews</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide"><?= h(__('profile.reviews')) ?></div>
                     </div>
                     <div class="text-center">
                         <div class="text-2xl font-bold text-purple-400"><?= $stats['photos'] ?></div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide">Photos</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide"><?= h(__('profile.photos')) ?></div>
                     </div>
                     <div class="text-center">
                         <div class="text-2xl font-bold text-green-400"><?= $stats['checkins'] ?></div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide">Check-ins</div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide"><?= h(__('profile.checkins')) ?></div>
                     </div>
                 </div>
             </div>
@@ -170,15 +182,21 @@ include APP_ROOT . '/components/header.php';
             <div class="flex flex-col gap-2">
                 <a href="/" class="inline-flex items-center gap-2 bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-4 py-2 rounded-lg font-medium text-sm transition-colors">
                     <i data-lucide="compass" class="w-4 h-4"></i>
-                    <span>Explore Beaches</span>
+                    <span><?= h(__('profile.explore_beaches')) ?></span>
                 </a>
 	                <a href="/logout" class="inline-flex items-center gap-2 border border-white/20 hover:border-white/40 text-gray-300 hover:text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors">
 	                    <i data-lucide="log-out" class="w-4 h-4"></i>
-	                    <span>Sign Out</span>
+	                    <span><?= h(__('profile.sign_out')) ?></span>
 	                </a>
             </div>
         </div>
     </div>
+
+    <?php if ($deleteError !== ''): ?>
+    <div class="bg-red-500/10 border border-red-500/30 text-red-200 px-4 py-3 rounded-xl mb-8">
+        <?= h($deleteErrorMessages[$deleteError] ?? __('profile.delete_error_failed')) ?>
+    </div>
+    <?php endif; ?>
 
     <!-- Dashboard Widgets -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -187,7 +205,7 @@ include APP_ROOT . '/components/header.php';
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-white flex items-center gap-2">
                     <i data-lucide="trophy" class="w-5 h-5 text-brand-yellow"></i>
-                    Explorer Progress
+                    <?= h(__('profile.explorer_progress')) ?>
                 </h2>
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border <?= h($levelInfo['colorClass']) ?>">
                     <span><?= h($levelInfo['icon']) ?></span>
@@ -197,7 +215,10 @@ include APP_ROOT . '/components/header.php';
 
             <div class="mb-4">
                 <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-400"><?= $beachesVisited ?> beach<?= $beachesVisited !== 1 ? 'es' : '' ?> explored</span>
+                    <span class="text-gray-400"><?php
+                        $exploredParts = explode('|', __('profile.beaches_explored', ['count' => $beachesVisited]));
+                        echo h($beachesVisited === 1 ? $exploredParts[0] : ($exploredParts[1] ?? $exploredParts[0]));
+                    ?></span>
                     <?php if ($progress['next_level']): ?>
                     <span class="text-brand-yellow"><?= h($progress['message']) ?></span>
                     <?php endif; ?>
@@ -210,14 +231,17 @@ include APP_ROOT . '/components/header.php';
 
             <?php if ($progress['next_level']): ?>
             <p class="text-sm text-gray-500">
-                Visit <?= $progress['beaches_needed'] ?> more beach<?= $progress['beaches_needed'] !== 1 ? 'es' : '' ?> to reach
+                <?php
+                    $visitParts = explode('|', __('profile.visit_more', ['count' => $progress['beaches_needed']]));
+                    echo h($progress['beaches_needed'] === 1 ? $visitParts[0] : ($visitParts[1] ?? $visitParts[0]));
+                ?>
                 <span class="<?= h($progress['next_level_info']['colorClass']) ?> px-2 py-0.5 rounded-full text-xs font-medium">
                     <?= h($progress['next_level_info']['icon']) ?> <?= h($progress['next_level_info']['label']) ?>
                 </span>
             </p>
             <?php else: ?>
             <p class="text-sm text-purple-400">
-                You've achieved the highest explorer rank! Keep exploring and helping others discover great beaches.
+                <?= h(__('profile.max_rank')) ?>
             </p>
             <?php endif; ?>
         </div>
@@ -227,18 +251,18 @@ include APP_ROOT . '/components/header.php';
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-white flex items-center gap-2">
                     <i data-lucide="sun" class="w-5 h-5 text-brand-yellow"></i>
-                    Your Beaches Today
+                    <?= h(__('profile.your_beaches_today')) ?>
                 </h2>
                 <?php if (!empty($favoritesForWeather)): ?>
-                <span class="text-xs text-gray-500">Weather for favorites</span>
+                <span class="text-xs text-gray-500"><?= h(__('profile.weather_for_favorites')) ?></span>
                 <?php endif; ?>
             </div>
 
             <?php if (empty($favoritesForWeather)): ?>
             <div class="text-center py-6">
-                <p class="text-gray-400 mb-3">Save some beaches to see their weather here!</p>
+                <p class="text-gray-400 mb-3"><?= h(__('profile.save_beaches_weather')) ?></p>
                 <a href="/" class="text-brand-yellow hover:text-yellow-300 text-sm font-medium">
-                    Explore beaches
+                    <?= h(__('profile.explore_beaches_link')) ?>
                 </a>
             </div>
             <?php else: ?>
@@ -281,12 +305,76 @@ include APP_ROOT . '/components/header.php';
             </div>
             <?php if (count($favorites) > 5): ?>
             <p class="text-xs text-gray-500 mt-3 text-center">
-                Showing weather for your top 5 favorites
+                <?= h(__('profile.showing_top_5')) ?>
             </p>
             <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
+
+    <section class="bg-red-950/40 backdrop-blur-md rounded-xl border border-red-500/30 p-6 mb-8" aria-labelledby="account-danger-zone">
+        <div class="flex items-start gap-3 mb-5">
+            <i data-lucide="triangle-alert" class="w-5 h-5 text-red-300 mt-0.5"></i>
+            <div>
+                <h2 id="account-danger-zone" class="text-lg font-semibold text-white"><?= h(__('profile.danger_zone')) ?></h2>
+                <p class="text-sm text-red-100/80 mt-1"><?= h(__('profile.danger_zone_desc')) ?></p>
+            </div>
+        </div>
+
+        <p class="text-sm text-red-100 mb-5">
+            <?= h(__('profile.delete_account_warning')) ?>
+        </p>
+
+        <form method="POST" action="/api/account/delete.php" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <?= csrfField() ?>
+            <input type="hidden" name="redirect_tab" value="<?= h($activeTab) ?>">
+
+            <div>
+                <label for="delete-account-email" class="block text-sm font-medium text-white mb-2">
+                    <?= h(__('profile.delete_account_email_label')) ?>
+                </label>
+                <input
+                    id="delete-account-email"
+                    name="confirm_email"
+                    type="email"
+                    inputmode="email"
+                    autocomplete="email"
+                    required
+                    placeholder="<?= h((string) ($user['email'] ?? '')) ?>"
+                    class="w-full rounded-lg border border-red-300/30 bg-black/20 px-4 py-3 text-white placeholder:text-red-100/40 focus:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-300/40"
+                >
+            </div>
+
+            <div>
+                <label for="delete-account-phrase" class="block text-sm font-medium text-white mb-2">
+                    <?= h(__('profile.delete_account_phrase_label')) ?>
+                </label>
+                <input
+                    id="delete-account-phrase"
+                    name="confirm_phrase"
+                    type="text"
+                    autocapitalize="characters"
+                    autocomplete="off"
+                    spellcheck="false"
+                    required
+                    placeholder="DELETE"
+                    class="w-full rounded-lg border border-red-300/30 bg-black/20 px-4 py-3 text-white placeholder:text-red-100/40 focus:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-300/40"
+                >
+                <p class="text-xs text-red-100/70 mt-2"><?= h(__('profile.delete_account_phrase_help')) ?></p>
+            </div>
+
+            <div class="md:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p class="text-sm text-red-100/80"><?= h(__('profile.delete_account_confirm')) ?></p>
+                <button
+                    type="submit"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-400"
+                >
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span><?= h(__('profile.delete_account_submit')) ?></span>
+                </button>
+            </div>
+        </form>
+    </section>
 
     <!-- Tabs -->
     <div class="border-b border-white/10 mb-6">
@@ -296,7 +384,7 @@ include APP_ROOT . '/components/header.php';
                aria-selected="<?= $activeTab === 'favorites' ? 'true' : 'false' ?>"
                class="flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors <?= $activeTab === 'favorites' ? 'border-brand-yellow text-brand-yellow' : 'border-transparent text-gray-400 hover:text-white hover:border-white/30' ?>">
                 <i data-lucide="heart" class="w-4 h-4"></i>
-                <span>Favorites</span>
+                <span><?= h(__('profile.favorites')) ?></span>
                 <span class="bg-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-full"><?= $stats['favorites'] ?></span>
             </a>
             <a href="?tab=reviews"
@@ -304,7 +392,7 @@ include APP_ROOT . '/components/header.php';
                aria-selected="<?= $activeTab === 'reviews' ? 'true' : 'false' ?>"
                class="flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors <?= $activeTab === 'reviews' ? 'border-brand-yellow text-brand-yellow' : 'border-transparent text-gray-400 hover:text-white hover:border-white/30' ?>">
                 <i data-lucide="star" class="w-4 h-4"></i>
-                <span>Reviews</span>
+                <span><?= h(__('profile.reviews')) ?></span>
                 <span class="bg-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-full"><?= $stats['reviews'] ?></span>
             </a>
             <a href="?tab=photos"
@@ -312,7 +400,7 @@ include APP_ROOT . '/components/header.php';
                aria-selected="<?= $activeTab === 'photos' ? 'true' : 'false' ?>"
                class="flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors <?= $activeTab === 'photos' ? 'border-brand-yellow text-brand-yellow' : 'border-transparent text-gray-400 hover:text-white hover:border-white/30' ?>">
                 <i data-lucide="image" class="w-4 h-4"></i>
-                <span>Photos</span>
+                <span><?= h(__('profile.photos')) ?></span>
                 <span class="bg-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-full"><?= $stats['photos'] ?></span>
             </a>
             <a href="?tab=checkins"
@@ -320,7 +408,7 @@ include APP_ROOT . '/components/header.php';
                aria-selected="<?= $activeTab === 'checkins' ? 'true' : 'false' ?>"
                class="flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors <?= $activeTab === 'checkins' ? 'border-brand-yellow text-brand-yellow' : 'border-transparent text-gray-400 hover:text-white hover:border-white/30' ?>">
                 <i data-lucide="map-pin" class="w-4 h-4"></i>
-                <span>Check-ins</span>
+                <span><?= h(__('profile.checkins')) ?></span>
                 <span class="bg-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-full"><?= $stats['checkins'] ?></span>
             </a>
         </nav>
@@ -333,10 +421,10 @@ include APP_ROOT . '/components/header.php';
         <?php if (empty($favorites)): ?>
         <div class="text-center py-16 bg-white/5 border border-white/10 rounded-xl">
             <div class="text-6xl mb-4">❤️</div>
-            <h2 class="text-xl font-semibold text-white mb-2">No favorites yet</h2>
-            <p class="text-gray-400 mb-6">Start exploring and save beaches you love!</p>
+            <h2 class="text-xl font-semibold text-white mb-2"><?= h(__('profile.no_favorites')) ?></h2>
+            <p class="text-gray-400 mb-6"><?= h(__('profile.no_favorites_cta')) ?></p>
             <a href="/" class="inline-block bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-6 py-3 rounded-lg font-medium transition-colors">
-                Explore Beaches
+                <?= h(__('profile.explore_beaches')) ?>
             </a>
         </div>
         <?php else: ?>
@@ -357,10 +445,10 @@ include APP_ROOT . '/components/header.php';
         <?php if (empty($reviews)): ?>
         <div class="text-center py-16 bg-white/5 border border-white/10 rounded-xl">
             <div class="text-6xl mb-4">⭐</div>
-            <h2 class="text-xl font-semibold text-white mb-2">No reviews yet</h2>
-            <p class="text-gray-400 mb-6">Share your beach experiences with the community!</p>
+            <h2 class="text-xl font-semibold text-white mb-2"><?= h(__('profile.no_reviews')) ?></h2>
+            <p class="text-gray-400 mb-6"><?= h(__('profile.no_reviews_cta')) ?></p>
             <a href="/" class="inline-block bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-6 py-3 rounded-lg font-medium transition-colors">
-                Find a Beach to Review
+                <?= h(__('profile.find_beach_review')) ?>
             </a>
         </div>
         <?php else: ?>
@@ -407,7 +495,7 @@ include APP_ROOT . '/components/header.php';
                         <?php if (!empty($review['helpful_count'])): ?>
                         <div class="mt-2 text-xs text-gray-500">
                             <i data-lucide="thumbs-up" class="w-3 h-3 inline-block"></i>
-                            <?= $review['helpful_count'] ?> found this helpful
+                            <?= h(__('profile.found_helpful', ['count' => $review['helpful_count']])) ?>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -422,10 +510,10 @@ include APP_ROOT . '/components/header.php';
         <?php if (empty($photos)): ?>
         <div class="text-center py-16 bg-white/5 border border-white/10 rounded-xl">
             <div class="text-6xl mb-4">📷</div>
-            <h2 class="text-xl font-semibold text-white mb-2">No photos yet</h2>
-            <p class="text-gray-400 mb-6">Share your beautiful beach photos with the community!</p>
+            <h2 class="text-xl font-semibold text-white mb-2"><?= h(__('profile.no_photos')) ?></h2>
+            <p class="text-gray-400 mb-6"><?= h(__('profile.no_photos_cta')) ?></p>
             <a href="/" class="inline-block bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-6 py-3 rounded-lg font-medium transition-colors">
-                Find a Beach
+                <?= h(__('profile.find_beach')) ?>
             </a>
         </div>
         <?php else: ?>
@@ -433,7 +521,7 @@ include APP_ROOT . '/components/header.php';
             <?php foreach ($photos as $photo): ?>
             <div class="group relative aspect-square rounded-xl overflow-hidden bg-brand-dark">
                 <img src="<?= h($photo['thumbnail_url'] ?? $photo['photo_url']) ?>"
-                     alt="Photo at <?= h($photo['beach_name']) ?>"
+                     alt="<?= h(__('profile.photo_at', ['name' => $photo['beach_name']])) ?>"
                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                      loading="lazy">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
@@ -456,10 +544,10 @@ include APP_ROOT . '/components/header.php';
         <?php if (empty($checkins)): ?>
         <div class="text-center py-16 bg-white/5 border border-white/10 rounded-xl">
             <div class="text-6xl mb-4">📍</div>
-            <h2 class="text-xl font-semibold text-white mb-2">No check-ins yet</h2>
-            <p class="text-gray-400 mb-6">Check in at beaches to help others with current conditions!</p>
+            <h2 class="text-xl font-semibold text-white mb-2"><?= h(__('profile.no_checkins')) ?></h2>
+            <p class="text-gray-400 mb-6"><?= h(__('profile.no_checkins_cta')) ?></p>
             <a href="/" class="inline-block bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-6 py-3 rounded-lg font-medium transition-colors">
-                Explore Beaches
+                <?= h(__('profile.explore_beaches')) ?>
             </a>
         </div>
         <?php else: ?>
@@ -509,18 +597,18 @@ include APP_ROOT . '/components/header.php';
 </div>
 
 <!-- Beach Details Drawer -->
-<div id="beach-drawer" class="drawer-overlay" role="dialog" aria-modal="true" aria-label="Beach details" onclick="closeBeachDrawer(event)">
-    <div class="drawer-content" onclick="event.stopPropagation()">
+<div id="beach-drawer" class="drawer-overlay" role="dialog" aria-modal="true" aria-label="Beach details" data-action="closeBeachDrawer" data-action-args='["__event__"]'>
+    <div class="drawer-content" data-action-stop data-action="noop" data-on="click">
         <div id="drawer-content-inner"></div>
     </div>
 </div>
 
 <!-- Share Modal -->
-<div id="share-modal" class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title" onclick="closeShareModal()">
-    <div class="share-modal-content" onclick="event.stopPropagation()">
+<div id="share-modal" class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title" data-action="closeShareModal">
+    <div class="share-modal-content" data-action-stop data-action="noop" data-on="click">
         <div class="flex justify-between items-center mb-4">
-            <h3 id="share-modal-title" class="text-lg font-semibold">Share Beach</h3>
-            <button onclick="closeShareModal()" class="text-gray-400 hover:text-gray-600" aria-label="Close">
+            <h3 id="share-modal-title" class="text-lg font-semibold"><?= h(__('profile.share_beach')) ?></h3>
+            <button data-action="closeShareModal" class="text-gray-400 hover:text-gray-600" aria-label="Close">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
@@ -528,7 +616,7 @@ include APP_ROOT . '/components/header.php';
     </div>
 </div>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 window.BeachFinder = {
     beaches: <?= json_encode($favorites) ?>,
     userFavorites: <?= json_encode($userFavorites) ?>,

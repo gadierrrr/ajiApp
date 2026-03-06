@@ -4,6 +4,27 @@
  * Include at the top of all public-facing pages
  */
 
+// Generate a per-request CSP nonce for inline <script> blocks.
+// This replaces 'unsafe-inline' in script-src, meaning only scripts
+// with nonce="<this value>" will execute.
+if (!defined('CSP_NONCE')) {
+    define('CSP_NONCE', base64_encode(random_bytes(16)));
+}
+
+/**
+ * Return the nonce value for embedding in <script nonce="...">.
+ */
+function cspNonce(): string {
+    return CSP_NONCE;
+}
+
+/**
+ * Return a full nonce="..." attribute string for use in PHP templates.
+ */
+function cspNonceAttr(): string {
+    return 'nonce="' . CSP_NONCE . '"';
+}
+
 if (!function_exists('cspHostSourceFromUrl')) {
     function cspHostSourceFromUrl(string $url): ?string {
         $parsed = parse_url($url);
@@ -33,11 +54,14 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
 // Content Security Policy - includes optional Umami host from runtime config.
-$scriptSources = ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'cdn.tailwindcss.com', 'unpkg.com', 'cdn.jsdelivr.net', 'cloud.umami.is'];
+// Note: 'unsafe-inline' is still required for style-src (Tailwind + inline styles).
+// 'unsafe-eval' removed from script-src — no runtime eval() is used.
+// If a JS library requires eval, add a specific hash/nonce instead.
+$scriptSources = ["'self'", "'nonce-" . CSP_NONCE . "'", "'strict-dynamic'", 'cdn.tailwindcss.com', 'unpkg.com', 'cdn.jsdelivr.net', 'cloud.umami.is'];
 $styleSources = ["'self'", "'unsafe-inline'", 'cdn.tailwindcss.com', 'unpkg.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com'];
-$imgSources = ["'self'", 'data:', 'blob:', 'https://*.cartocdn.com', 'https://*.basemaps.cartocdn.com'];
+$imgSources = ["'self'", 'data:', 'blob:', 'https://*.basemaps.cartocdn.com', 'https://a.basemaps.cartocdn.com', 'https://b.basemaps.cartocdn.com', 'https://c.basemaps.cartocdn.com', 'https://d.basemaps.cartocdn.com'];
 $fontSources = ["'self'", 'data:', 'fonts.gstatic.com'];
-$connectSources = ["'self'", 'https://*.cartocdn.com', 'https://*.basemaps.cartocdn.com', 'unpkg.com', 'cdn.jsdelivr.net', 'cloud.umami.is', 'api-gateway.umami.dev', 'https://next-api.useplunk.com'];
+$connectSources = ["'self'", 'https://*.basemaps.cartocdn.com', 'unpkg.com', 'cdn.jsdelivr.net', 'cloud.umami.is', 'api-gateway.umami.dev', 'https://next-api.useplunk.com'];
 $workerSources = ["'self'", 'blob:'];
 
 $umamiEnabled = function_exists('envBool') ? envBool('UMAMI_ENABLED', false) : false;
@@ -66,7 +90,8 @@ $csp = "default-src 'self'; "
     . 'img-src ' . implode(' ', $imgSources) . '; '
     . 'font-src ' . implode(' ', $fontSources) . '; '
     . 'connect-src ' . implode(' ', $connectSources) . '; '
-    . 'worker-src ' . implode(' ', $workerSources) . ';';
+    . 'worker-src ' . implode(' ', $workerSources) . '; '
+    . 'upgrade-insecure-requests;';
 
 header('Content-Security-Policy: ' . $csp);
 
@@ -87,8 +112,10 @@ if (!headers_sent()) {
         // Auth pages: no cache
         header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         header('Pragma: no-cache');
+        header('Vary: Cookie, Accept-Language');
     } else {
-        // Regular pages: moderate cache with revalidation
-        header('Cache-Control: public, max-age=300, stale-while-revalidate=600');
+        // Locale-aware HTML should not be cached publicly.
+        header('Cache-Control: private, no-cache, max-age=0, must-revalidate');
+        header('Vary: Cookie, Accept-Language');
     }
 }

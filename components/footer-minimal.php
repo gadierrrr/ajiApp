@@ -7,13 +7,13 @@
     <footer class="bg-brand-darker border-t border-brand-yellow/80 py-8 px-4 sm:px-6 mt-auto">
         <div class="max-w-7xl mx-auto text-center">
             <p class="text-xs text-gray-600">
-                &copy; <?= date('Y') ?> Beach Finder. All rights reserved.
+                &copy; <?= date('Y') ?> <?= h($_ENV['APP_NAME'] ?? 'Beach Finder') ?>. <?= h(__('footer.copyright')) ?>
             </p>
         </div>
     </footer>
 
     <!-- Minimal JS - only what's needed for auth pages -->
-    <script>
+    <script <?= cspNonceAttr() ?>>
     // Toast notifications
     function showToast(message, type = 'info', duration = 4000) {
         let container = document.querySelector('.toast-container');
@@ -24,7 +24,7 @@
         toast.innerHTML = `
             <span class="toast-icon">${icons[type] || icons.info}</span>
             <span class="toast-message">${message}</span>
-            <button class="toast-close" aria-label="Close">✕</button>
+            <button class="toast-close" aria-label="<?= h(__('common.close')) ?>">✕</button>
         `;
         toast.querySelector('.toast-close').onclick = () => removeToast(toast);
         container.appendChild(toast);

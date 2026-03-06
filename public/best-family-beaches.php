@@ -10,12 +10,16 @@ require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
 require_once APP_ROOT . '/inc/collection_query.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
+require_once APP_ROOT . '/inc/i18n.php';
 require_once APP_ROOT . '/components/seo-schemas.php';
 
+$lang = getCurrentLanguage();
+
 // Page metadata
-$pageTitle = 'Best Family Beaches in Puerto Rico (2026 Guide)';
-$pageDescription = 'Discover the best family-friendly beaches in Puerto Rico for 2026. Calm waters, lifeguards, amenities, and fun for kids of all ages at these top family beach destinations.';
-$canonicalUrl = getPublicBaseUrl() . '/best-family-beaches';
+$pageTitle = __('pages.best_family_beaches.title');
+$pageDescription = __('pages.best_family_beaches.description');
+$canonicalUrl = absoluteUrl('/best-family-beaches');
 
 $collectionKey = 'best-family-beaches';
 $collectionAnchorId = 'top-beaches';
@@ -44,33 +48,33 @@ $extraHead .= websiteSchema();
 // FAQ data
 $pageFaqs = [
     [
-        'question' => 'What is the best family beach in Puerto Rico?',
-        'answer' => 'Luquillo Beach (Balneario La Monserrate) is widely considered the best family beach in Puerto Rico. It offers calm, shallow waters protected by a reef, lifeguards on duty, food kiosks, restrooms, showers, and ample parking. The beach has a gentle slope perfect for small children.'
+        'question' => __('pages.best_family_beaches.faq_1_q'),
+        'answer' => __('pages.best_family_beaches.faq_1_a')
     ],
     [
-        'question' => 'Are Puerto Rico beaches safe for kids?',
-        'answer' => 'Many Puerto Rico beaches are excellent for kids, especially designated "balnearios" (public beaches) which typically have lifeguards, facilities, and calmer waters. Always supervise children, check for posted warnings, and choose beaches known for calm conditions like Luquillo, Seven Seas, or Boqueron.'
+        'question' => __('pages.best_family_beaches.faq_2_q'),
+        'answer' => __('pages.best_family_beaches.faq_2_a')
     ],
     [
-        'question' => 'Which Puerto Rico beaches have lifeguards?',
-        'answer' => 'Most public beaches (balnearios) in Puerto Rico have lifeguards during peak hours. Popular beaches with lifeguards include Luquillo Beach, Condado Beach, Isla Verde Beach, Seven Seas Beach, Boqueron Beach, and Sun Bay in Vieques. Hours are typically 8:30 AM to 5:00 PM.'
+        'question' => __('pages.best_family_beaches.faq_3_q'),
+        'answer' => __('pages.best_family_beaches.faq_3_a')
     ],
     [
-        'question' => 'What should I bring to a Puerto Rico beach with kids?',
-        'answer' => 'Pack reef-safe sunscreen (SPF 50+), rash guards for sun protection, water shoes (some beaches have rocky areas), plenty of water, snacks, a beach tent or umbrella for shade, sand toys, and snorkeling gear for older kids. Many beaches have food vendors, but it\'s good to have supplies.'
+        'question' => __('pages.best_family_beaches.faq_4_q'),
+        'answer' => __('pages.best_family_beaches.faq_4_a')
     ],
     [
-        'question' => 'Are there beaches with playgrounds in Puerto Rico?',
-        'answer' => 'Several beaches have nearby playgrounds or picnic areas. Luquillo Beach has a playground near the food kiosks, and many balnearios have picnic pavilions and grassy areas for play. Condado Beach and Ocean Park have nearby parks and facilities popular with families.'
+        'question' => __('pages.best_family_beaches.faq_5_q'),
+        'answer' => __('pages.best_family_beaches.faq_5_a')
     ]
 ];
 $extraHead .= faqSchema($pageFaqs);
 
 // Breadcrumbs
 $breadcrumbs = [
-    ['name' => 'Home', 'url' => '/'],
-    ['name' => 'Best Beaches', 'url' => '/best-beaches'],
-    ['name' => 'Family Beaches']
+    ['name' => __('nav.home'), 'url' => routeUrl('home', $lang)],
+    ['name' => __('footer.best_beaches'), 'url' => routeUrl('best_beaches', $lang)],
+    ['name' => __('footer.family_beaches')]
 ];
 
 $bodyVariant = 'collection-dark';
@@ -84,14 +88,14 @@ include APP_ROOT . '/components/header.php';
 <section class="collection-content-nav bg-white border-b">
     <div class="max-w-7xl mx-auto px-4 py-4">
         <div class="flex flex-wrap gap-2 justify-center text-sm">
-            <span class="text-gray-500">Jump to:</span>
-            <a href="#top-beaches" class="text-amber-700 hover:underline">Top Beaches</a>
+            <span class="text-gray-500"><?= h(__('pages.best_family_beaches.jump_to')) ?></span>
+            <a href="#top-beaches" class="text-amber-700 hover:underline"><?= h(__('pages.best_family_beaches.jump_top_beaches')) ?></a>
             <span class="text-gray-300">|</span>
-            <a href="#tips" class="text-amber-700 hover:underline">Family Tips</a>
+            <a href="#tips" class="text-amber-700 hover:underline"><?= h(__('pages.best_family_beaches.jump_tips')) ?></a>
             <span class="text-gray-300">|</span>
-            <a href="#faq" class="text-amber-700 hover:underline">FAQs</a>
+            <a href="#faq" class="text-amber-700 hover:underline"><?= h(__('pages.best_family_beaches.jump_faq')) ?></a>
             <span class="text-gray-300">|</span>
-            <a href="#map" class="text-amber-700 hover:underline">Map</a>
+            <a href="#map" class="text-amber-700 hover:underline"><?= h(__('pages.best_family_beaches.jump_map')) ?></a>
         </div>
     </div>
 </section>
@@ -100,9 +104,9 @@ include APP_ROOT . '/components/header.php';
 <section class="py-12 bg-gray-50">
     <div class="max-w-4xl mx-auto px-4">
         <div class="prose prose-lg max-w-none beach-description">
-            <p>Puerto Rico is a <strong>fantastic family vacation destination</strong> with beaches perfect for children of all ages. The island's balnearios (public beaches) offer supervised swimming areas, restrooms, and food vendors, making beach days hassle-free for parents.</p>
+            <p><?= __('pages.best_family_beaches.intro_p1') ?></p>
 
-            <p>From the famous food kiosks at Luquillo to the calm crescent of Seven Seas Beach, these family-friendly shores combine safety, convenience, and natural beauty for the ultimate Caribbean family getaway.</p>
+            <p><?= __('pages.best_family_beaches.intro_p2') ?></p>
         </div>
     </div>
 </section>
@@ -111,44 +115,44 @@ include APP_ROOT . '/components/header.php';
 <section id="tips" class="py-12 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
-            Tips for Beach Days with Kids
+            <?= h(__('pages.best_family_beaches.tips_title')) ?>
         </h2>
 
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <div class="text-3xl mb-4">🕘</div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Arrive Early</h3>
-                <p class="text-gray-600 text-sm">Get to the beach by 9 AM for the best parking, calmer waters, and prime shade spots. Beaches get busier after 11 AM on weekends.</p>
+                <h3 class="text-lg font-bold text-gray-900 mb-2"><?= h(__('pages.best_family_beaches.tip_1_title')) ?></h3>
+                <p class="text-gray-600 text-sm"><?= h(__('pages.best_family_beaches.tip_1_desc')) ?></p>
             </div>
 
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <div class="text-3xl mb-4">🧴</div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Sun Protection</h3>
-                <p class="text-gray-600 text-sm">Apply reef-safe SPF 50+ sunscreen 30 minutes before the beach. Reapply every 2 hours. Rash guards provide excellent UV protection.</p>
+                <h3 class="text-lg font-bold text-gray-900 mb-2"><?= h(__('pages.best_family_beaches.tip_2_title')) ?></h3>
+                <p class="text-gray-600 text-sm"><?= h(__('pages.best_family_beaches.tip_2_desc')) ?></p>
             </div>
 
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <div class="text-3xl mb-4">👟</div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Water Shoes</h3>
-                <p class="text-gray-600 text-sm">Some beaches have rocky entries or sea urchins. Water shoes protect little feet and make entering the water easier and safer.</p>
+                <h3 class="text-lg font-bold text-gray-900 mb-2"><?= h(__('pages.best_family_beaches.tip_3_title')) ?></h3>
+                <p class="text-gray-600 text-sm"><?= h(__('pages.best_family_beaches.tip_3_desc')) ?></p>
             </div>
 
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <div class="text-3xl mb-4">⛱️</div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Bring Shade</h3>
-                <p class="text-gray-600 text-sm">Pack a beach tent, umbrella, or canopy. Natural shade is limited at many beaches, and kids need breaks from direct sun.</p>
+                <h3 class="text-lg font-bold text-gray-900 mb-2"><?= h(__('pages.best_family_beaches.tip_4_title')) ?></h3>
+                <p class="text-gray-600 text-sm"><?= h(__('pages.best_family_beaches.tip_4_desc')) ?></p>
             </div>
 
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <div class="text-3xl mb-4">🥤</div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Stay Hydrated</h3>
-                <p class="text-gray-600 text-sm">Bring plenty of water and healthy snacks. While many beaches have vendors, having your own supply ensures you're prepared.</p>
+                <h3 class="text-lg font-bold text-gray-900 mb-2"><?= h(__('pages.best_family_beaches.tip_5_title')) ?></h3>
+                <p class="text-gray-600 text-sm"><?= h(__('pages.best_family_beaches.tip_5_desc')) ?></p>
             </div>
 
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <div class="text-3xl mb-4">🏊</div>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Water Safety</h3>
-                <p class="text-gray-600 text-sm">Always supervise children in the water. Use floaties for non-swimmers and check for posted warnings about currents.</p>
+                <h3 class="text-lg font-bold text-gray-900 mb-2"><?= h(__('pages.best_family_beaches.tip_6_title')) ?></h3>
+                <p class="text-gray-600 text-sm"><?= h(__('pages.best_family_beaches.tip_6_desc')) ?></p>
             </div>
         </div>
     </div>
@@ -158,50 +162,50 @@ include APP_ROOT . '/components/header.php';
 <section class="py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
-            What Makes a Beach Family-Friendly?
+            <?= h(__('pages.best_family_beaches.features_title')) ?>
         </h2>
 
         <div class="grid md:grid-cols-2 gap-8">
             <div class="bg-slate-50 rounded-xl p-6">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">Must-Have Features</h3>
+                <h3 class="text-xl font-bold text-gray-900 mb-4"><?= h(__('pages.best_family_beaches.must_have_title')) ?></h3>
                 <ul class="text-gray-700 space-y-3">
                     <li class="flex items-start gap-2">
                         <span class="text-amber-600">✓</span>
-                        <span><strong>Calm, shallow waters</strong> - Gentle waves for safe swimming</span>
+                        <span><?= __('pages.best_family_beaches.must_have_1') ?></span>
                     </li>
                     <li class="flex items-start gap-2">
                         <span class="text-amber-600">✓</span>
-                        <span><strong>Lifeguards</strong> - Extra eyes for peace of mind</span>
+                        <span><?= __('pages.best_family_beaches.must_have_2') ?></span>
                     </li>
                     <li class="flex items-start gap-2">
                         <span class="text-amber-600">✓</span>
-                        <span><strong>Restrooms & showers</strong> - Essential for families</span>
+                        <span><?= __('pages.best_family_beaches.must_have_3') ?></span>
                     </li>
                     <li class="flex items-start gap-2">
                         <span class="text-amber-600">✓</span>
-                        <span><strong>Parking nearby</strong> - Easy access with beach gear</span>
+                        <span><?= __('pages.best_family_beaches.must_have_4') ?></span>
                     </li>
                 </ul>
             </div>
 
             <div class="bg-slate-50 rounded-xl p-6">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">Nice-to-Have Features</h3>
+                <h3 class="text-xl font-bold text-gray-900 mb-4"><?= h(__('pages.best_family_beaches.nice_to_have_title')) ?></h3>
                 <ul class="text-gray-700 space-y-3">
                     <li class="flex items-start gap-2">
                         <span class="text-amber-600">★</span>
-                        <span><strong>Food vendors</strong> - Convenient meals and snacks</span>
+                        <span><?= __('pages.best_family_beaches.nice_to_have_1') ?></span>
                     </li>
                     <li class="flex items-start gap-2">
                         <span class="text-amber-600">★</span>
-                        <span><strong>Picnic areas</strong> - Shaded spots for lunch</span>
+                        <span><?= __('pages.best_family_beaches.nice_to_have_2') ?></span>
                     </li>
                     <li class="flex items-start gap-2">
                         <span class="text-amber-600">★</span>
-                        <span><strong>Equipment rentals</strong> - Chairs, umbrellas, snorkel gear</span>
+                        <span><?= __('pages.best_family_beaches.nice_to_have_3') ?></span>
                     </li>
                     <li class="flex items-start gap-2">
                         <span class="text-amber-600">★</span>
-                        <span><strong>Playground nearby</strong> - Extra entertainment for kids</span>
+                        <span><?= __('pages.best_family_beaches.nice_to_have_4') ?></span>
                     </li>
                 </ul>
             </div>
@@ -209,40 +213,13 @@ include APP_ROOT . '/components/header.php';
     </div>
 </section>
 
-<!-- Other Beach Categories -->
-<section class="py-12 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
-            Explore More Beach Categories
-        </h2>
-
-        <div class="grid md:grid-cols-3 gap-6">
-            <a href="/best-beaches" class="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow group">
-                <div class="text-4xl mb-4">🏖️</div>
-                <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand-darker">Best Overall Beaches</h3>
-                <p class="text-gray-600 text-sm mt-2">Top 15 beaches in Puerto Rico</p>
-            </a>
-
-            <a href="/best-snorkeling-beaches" class="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow group">
-                <div class="text-4xl mb-4">🤿</div>
-                <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand-darker">Best for Snorkeling</h3>
-                <p class="text-gray-600 text-sm mt-2">Crystal-clear waters and coral reefs</p>
-            </a>
-
-            <a href="/beaches-near-san-juan" class="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow group">
-                <div class="text-4xl mb-4">🏙️</div>
-                <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand-darker">Near San Juan</h3>
-                <p class="text-gray-600 text-sm mt-2">Easy access from the capital</p>
-            </a>
-        </div>
-    </div>
-</section>
+<?php $currentCollectionKey = $collectionKey; include APP_ROOT . '/components/collection/related-collections.php'; ?>
 
 <!-- FAQ Section -->
 <section id="faq" class="py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
-            Family Beach FAQs
+            <?= h(__('pages.best_family_beaches.faq_title')) ?>
         </h2>
 
         <div class="space-y-4">
@@ -265,14 +242,14 @@ include APP_ROOT . '/components/header.php';
 <section id="map" class="py-12 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
-            Find Family Beaches on the Map
+            <?= h(__('pages.best_family_beaches.map_title')) ?>
         </h2>
         <div class="text-center">
             <a href="?view=map&collection=best-family-beaches#top-beaches" class="inline-flex items-center gap-2 bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-6 py-3 rounded-lg font-medium transition-colors">
                 <span>🗺️</span>
-                <span>View Family Beaches Map</span>
+                <span><?= h(__('pages.best_family_beaches.map_button')) ?></span>
             </a>
-            <p class="text-gray-600 mt-4">Filter the interactive map to show all family-friendly beaches.</p>
+            <p class="text-gray-600 mt-4"><?= h(__('pages.best_family_beaches.map_desc')) ?></p>
         </div>
     </div>
 </section>
@@ -280,10 +257,10 @@ include APP_ROOT . '/components/header.php';
 <!-- CTA Section -->
 <section class="py-12 bg-brand-yellow text-brand-darker">
     <div class="max-w-4xl mx-auto px-4 text-center">
-        <h2 class="text-2xl md:text-3xl font-bold mb-4">Find the Perfect Beach for Your Family</h2>
-        <p class="text-lg opacity-90 mb-6">Tell us about your family's preferences and get personalized beach recommendations.</p>
-        <a href="/quiz" class="inline-block bg-white text-amber-700 hover:bg-slate-50 px-8 py-3 rounded-lg font-semibold transition-colors">
-            Take the Beach Match Quiz
+        <h2 class="text-2xl md:text-3xl font-bold mb-4"><?= h(__('pages.best_family_beaches.cta_title')) ?></h2>
+        <p class="text-lg opacity-90 mb-6"><?= h(__('pages.best_family_beaches.cta_desc')) ?></p>
+        <a href="<?= h(routeUrl('quiz', $lang)) ?>" class="inline-block bg-white text-amber-700 hover:bg-slate-50 px-8 py-3 rounded-lg font-semibold transition-colors">
+            <?= h(__('pages.common.take_quiz')) ?>
         </a>
     </div>
 </section>
@@ -292,6 +269,6 @@ include APP_ROOT . '/components/header.php';
 
 <?php
 $skipAppScripts = true;
-$extraScripts = '<script defer src="/assets/js/collection-explorer.min.js"></script>';
+$extraScripts = '<script defer src="/assets/js/collection-explorer.min.js" ' . cspNonceAttr() . '></script>';
 ?>
 <?php include APP_ROOT . '/components/footer.php'; ?>

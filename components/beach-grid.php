@@ -32,11 +32,11 @@ $weatherDataMap = [];
 <?php if (empty($beaches)): ?>
 <div class="col-span-full text-center py-16">
     <i data-lucide="umbrella" class="w-16 h-16 mx-auto text-white/30 mb-4" aria-hidden="true"></i>
-    <h3 class="text-xl font-semibold text-white mb-2">No beaches found</h3>
-    <p class="text-white/60 mb-4">Try adjusting your filters or search criteria</p>
-    <button onclick="clearFilters()" class="text-brand-yellow hover:text-yellow-300 font-medium inline-flex items-center gap-1.5">
+    <h3 class="text-xl font-semibold text-white mb-2"><?= h(__('filters.no_results_title')) ?></h3>
+    <p class="text-white/60 mb-4"><?= h(__('filters.no_results_hint')) ?></p>
+    <button data-action="clearFilters" class="text-brand-yellow hover:text-yellow-300 font-medium inline-flex items-center gap-1.5">
         <i data-lucide="x" class="w-4 h-4" aria-hidden="true"></i>
-        Clear all filters
+        <?= h(__('filters.clear_filters')) ?>
     </button>
 </div>
 <?php else: ?>

@@ -89,7 +89,9 @@
             mapLoadingId: typeof rawContext.mapLoadingId === "string" ? rawContext.mapLoadingId : "",
             mapTitle: typeof rawContext.mapTitle === "string" ? rawContext.mapTitle : "Beach Map",
             autoScroll: rawContext.autoScroll === true,
-            updateUrl: rawContext.updateUrl === true
+            updateUrl: rawContext.updateUrl === true,
+            i18n: (rawContext.i18n && typeof rawContext.i18n === "object") ? rawContext.i18n : {},
+            beachUrlPrefix: typeof rawContext.beachUrlPrefix === "string" ? rawContext.beachUrlPrefix : "/beach/"
         };
 
         if (!context.mapViewId || !context.mapContainerId) {
@@ -194,9 +196,14 @@
     }
 
     function buildPopupHtml(beach) {
+        const context = currentContext || getContextFromWindow();
+        const i18n = (context && context.i18n) || {};
+        const beachPrefix = (context && context.beachUrlPrefix) || "/beach/";
+        const viewDetailsLabel = i18n.viewDetails || "View Details";
+        const directionsLabel = i18n.directions || "Directions";
         const detailLink = beach.slug
-            ? `<a href="/beach/${encodeURIComponent(beach.slug)}" class="popup-btn popup-btn-primary">View Details</a>`
-            : `<span class="popup-btn popup-btn-primary opacity-60" aria-disabled="true">View Details</span>`;
+            ? `<a href="${beachPrefix}${encodeURIComponent(beach.slug)}" class="popup-btn popup-btn-primary">${escapeHtml(viewDetailsLabel)}</a>`
+            : `<span class="popup-btn popup-btn-primary opacity-60" aria-disabled="true">${escapeHtml(viewDetailsLabel)}</span>`;
         const rating = beach.google_rating ? `
             <span class="popup-rating">
                 <span class="text-yellow-500">★</span> ${Number(beach.google_rating).toFixed(1)}
@@ -214,7 +221,7 @@
                        target="_blank"
                        rel="noopener noreferrer"
                        class="popup-btn popup-btn-secondary">
-                       Directions
+                       ${escapeHtml(directionsLabel)}
                     </a>
                     ${detailLink}
                 </div>

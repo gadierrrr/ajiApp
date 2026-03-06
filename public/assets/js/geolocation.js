@@ -1,8 +1,11 @@
 // Geolocation functions for Beach Finder
+const GS = window.BF_STRINGS || {};
 
 function requestUserLocation() {
     if (!navigator.geolocation) {
-        alert("Geolocation is not supported by your browser");
+        if (typeof showToast === "function") {
+            showToast(GS.geo_error || "Geolocation is not supported by your browser", "error");
+        }
         return;
     }
 
@@ -21,13 +24,13 @@ function requestUserLocation() {
 
     // Update desktop UI - loading state
     if (locationIcon) locationIcon.textContent = "⏳";
-    if (locationText) locationText.textContent = "Getting location...";
+    if (locationText) locationText.textContent = GS.geo_getting || "Getting location...";
     if (locationBtn) locationBtn.disabled = true;
 
     // Update mobile UI - loading state
-    if (mobileNearmeText) mobileNearmeText.textContent = "Finding...";
+    if (mobileNearmeText) mobileNearmeText.textContent = GS.geo_getting_short || "Finding...";
     if (mobileNearmeBtn) mobileNearmeBtn.disabled = true;
-    if (mobileLocationText) mobileLocationText.textContent = "Getting location...";
+    if (mobileLocationText) mobileLocationText.textContent = GS.geo_getting || "Getting location...";
     if (mobileLocationBtn) mobileLocationBtn.disabled = true;
 
     state.geolocationStatus = "requesting";
@@ -61,34 +64,34 @@ function requestUserLocation() {
 
             // Reset desktop UI
             if (locationIcon) locationIcon.textContent = "📍";
-            if (locationText) locationText.textContent = "Location denied";
+            if (locationText) locationText.textContent = GS.geo_denied || "Location denied";
             if (locationBtn) {
                 locationBtn.disabled = false;
                 locationBtn.classList.add("border-red-300", "text-red-600");
             }
 
             // Reset mobile UI
-            if (mobileNearmeText) mobileNearmeText.textContent = "Denied";
+            if (mobileNearmeText) mobileNearmeText.textContent = GS.geo_denied_short || "Denied";
             if (mobileNearmeBtn) {
                 mobileNearmeBtn.disabled = false;
                 mobileNearmeBtn.classList.add("border-red-300", "text-red-400");
             }
-            if (mobileLocationText) mobileLocationText.textContent = "Location denied";
+            if (mobileLocationText) mobileLocationText.textContent = GS.geo_denied || "Location denied";
             if (mobileLocationBtn) {
                 mobileLocationBtn.disabled = false;
                 mobileLocationBtn.classList.add("border-red-300", "text-red-400");
             }
 
-            let message = "Unable to get your location.";
+            let message = GS.geo_error || "Unable to get your location.";
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    message = "Location access denied. Please enable location in your browser settings.";
+                    message = GS.geo_denied || "Location access denied. Please enable location in your browser settings.";
                     break;
                 case error.POSITION_UNAVAILABLE:
-                    message = "Location information unavailable.";
+                    message = GS.geo_unavailable || "Location information unavailable.";
                     break;
                 case error.TIMEOUT:
-                    message = "Location request timed out. Please try again.";
+                    message = GS.geo_timeout || "Location request timed out. Please try again.";
                     break;
             }
             console.warn("Geolocation error:", error);
@@ -100,13 +103,13 @@ function requestUserLocation() {
 
             // Reset UI after delay
             setTimeout(function() {
-                if (locationText) locationText.textContent = "Use My Location";
+                if (locationText) locationText.textContent = GS.geo_use_location || "Use My Location";
                 if (locationIcon) locationIcon.textContent = "📍";
                 if (locationBtn) locationBtn.classList.remove("border-red-300", "text-red-600");
 
-                if (mobileNearmeText) mobileNearmeText.textContent = "Near Me";
+                if (mobileNearmeText) mobileNearmeText.textContent = GS.geo_near_me || "Near Me";
                 if (mobileNearmeBtn) mobileNearmeBtn.classList.remove("border-red-300", "text-red-400");
-                if (mobileLocationText) mobileLocationText.textContent = "Use My Location";
+                if (mobileLocationText) mobileLocationText.textContent = GS.geo_use_location || "Use My Location";
                 if (mobileLocationBtn) mobileLocationBtn.classList.remove("border-red-300", "text-red-400");
             }, 3000);
         },
@@ -140,7 +143,7 @@ function onLocationGranted() {
         locationBtn.classList.remove("border-stone-300");
     }
     if (locationIcon) locationIcon.textContent = "✓";
-    if (locationText) locationText.textContent = "Location enabled";
+    if (locationText) locationText.textContent = GS.geo_enabled || "Location enabled";
     if (distanceContainer) distanceContainer.classList.remove("hidden");
     if (sortDistanceOption) sortDistanceOption.disabled = false;
 
@@ -149,14 +152,14 @@ function onLocationGranted() {
         mobileNearmeBtn.classList.add("bg-green-500/20", "border-green-500/50", "text-green-300");
         mobileNearmeBtn.classList.remove("text-white/80");
     }
-    if (mobileNearmeText) mobileNearmeText.textContent = "Near Me ✓";
+    if (mobileNearmeText) mobileNearmeText.textContent = (GS.geo_near_me || "Near Me") + " ✓";
 
     // Update mobile filter drawer location button
     if (mobileLocationBtn) {
         mobileLocationBtn.classList.add("bg-green-500/20", "border-green-500/50", "text-green-300");
         mobileLocationBtn.classList.remove("text-white/80");
     }
-    if (mobileLocationText) mobileLocationText.textContent = "Location enabled";
+    if (mobileLocationText) mobileLocationText.textContent = GS.geo_enabled || "Location enabled";
     if (mobileDistanceContainer) mobileDistanceContainer.classList.remove("hidden");
     if (mobileSortDistanceOption) mobileSortDistanceOption.disabled = false;
 
@@ -165,7 +168,7 @@ function onLocationGranted() {
 
     // Show toast
     if (typeof showToast === "function") {
-        showToast("Location enabled! Beaches sorted by distance.", "success", 3000);
+        showToast(GS.location_enabled || "Location enabled! Beaches sorted by distance.", "success", 3000);
     }
 }
 

@@ -19,11 +19,25 @@ Set in `.env`:
 - `PLUNK_PUBLIC_KEY=pk_...`
 - `PLUNK_BASE_URL=https://next-api.useplunk.com`
 - `PLUNK_WEBHOOK_SECRET=<random hex secret>`
+- `PLUNK_WEBHOOK_EXPECT_ENV=prod` on production, `staging` on staging
 - `EMAIL_PROVIDER=plunk`
 
 Related endpoints:
-- Webhook receiver: `/api/webhooks/plunk.php`
+- Webhook receiver: `/api/webhooks/plunk.php?env=<app_env>`
 - Health probe: `/api/health/email`
+
+## Environment Separation
+
+Never point Plunk test or sandbox webhooks at production.
+
+- Production example:
+  - URL: `https://www.puertoricobeachfinder.com/api/webhooks/plunk.php?env=prod`
+  - `.env`: `APP_ENV=prod`, `PLUNK_WEBHOOK_EXPECT_ENV=prod`
+- Staging example:
+  - URL: `https://staging.puertoricobeachfinder.com/api/webhooks/plunk.php?env=staging`
+  - `.env`: `APP_ENV=staging`, `PLUNK_WEBHOOK_EXPECT_ENV=staging`
+- Use a different `PLUNK_WEBHOOK_SECRET` in each environment.
+- The webhook endpoint rejects environment-tag mismatches and rejects test-mode events in production when the payload explicitly marks them as test/sandbox.
 
 ## Key Rotation
 
@@ -49,9 +63,10 @@ Related endpoints:
 
 1. Generate random secret (example):
    - `openssl rand -hex 32`
-2. Update `.env` and Plunk webhook config with the same secret.
+2. Update `.env` and the matching environment's Plunk webhook config with the same secret.
 3. Deploy.
-4. Send test webhook from Plunk and verify `2xx` response.
+4. Verify the environment-tagged webhook URL matches the app environment.
+5. Send test webhook only to staging and verify `2xx` response there.
 
 ## Health Checks
 
@@ -107,6 +122,8 @@ Expected: `{"success":true,...}`
 4. Webhook validation:
 - Invalid signature should return `401`.
 - Valid signature should return `{"success":true}`.
+- Environment mismatch should return `409`.
+- Run sandbox/test webhook validation against staging, not production.
 
 ## Troubleshooting
 

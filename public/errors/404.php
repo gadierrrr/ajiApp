@@ -1,15 +1,18 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/../bootstrap.php';
+require_once APP_ROOT . '/inc/i18n.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
 
 http_response_code(404);
 $appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
+$currentLang = getCurrentLanguage();
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="<?= htmlspecialchars(getHtmlLang(), ENT_QUOTES, 'UTF-8') ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Not Found | <?= htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') ?></title>
+    <title><?= htmlspecialchars(__('errors.page_not_found_title'), ENT_QUOTES, 'UTF-8') ?> | <?= htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') ?></title>
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f172a; color: #e2e8f0; }
         main { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
@@ -22,9 +25,9 @@ $appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
 <body>
 <main>
     <section class="card">
-        <h1>Page not found</h1>
-        <p>The page you requested does not exist or moved.</p>
-        <a href="/">Back to home</a>
+        <h1><?= htmlspecialchars(__('errors.page_not_found_title'), ENT_QUOTES, 'UTF-8') ?></h1>
+        <p><?= htmlspecialchars(__('errors.page_not_found_message'), ENT_QUOTES, 'UTF-8') ?></p>
+        <a href="<?= htmlspecialchars(routeUrl('home', $currentLang), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('errors.back_home'), ENT_QUOTES, 'UTF-8') ?></a>
     </section>
 </main>
 </body>

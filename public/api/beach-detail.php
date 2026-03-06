@@ -12,17 +12,28 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/../bootstrap.php';
 require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
+require_once APP_ROOT . '/inc/i18n.php';
 
 // Get beach by ID or slug
 $beachId = $_GET['id'] ?? '';
 $slug = $_GET['slug'] ?? '';
 $format = $_GET['format'] ?? 'html'; // html or json
 
+// Accept explicit lang parameter (from JS), otherwise use i18n system detection
+$lang = $_GET['lang'] ?? '';
+if ($lang && in_array($lang, ['en', 'es'], true)) {
+    // Override cookie superglobal so getCurrentLanguage() and __() use this lang
+    $_COOKIE['lang'] = $lang;
+} else {
+    $lang = getCurrentLanguage();
+}
+
 if (!$beachId && !$slug) {
     if ($format === 'json') {
         jsonResponse(['success' => false, 'error' => 'Beach ID or slug required'], 400);
     } else {
-        echo '<div class="p-8 text-center text-red-600">Beach not found</div>';
+        echo '<div class="p-8 text-center text-red-600">' . h(__('beach.beach_not_found')) . '</div>';
         exit;
     }
 }
@@ -38,7 +49,7 @@ if (!$beach) {
     if ($format === 'json') {
         jsonResponse(['success' => false, 'error' => 'Beach not found'], 404);
     } else {
-        echo '<div class="p-8 text-center"><div class="text-4xl mb-4">🏖️</div><p class="text-gray-600">Beach not found</p></div>';
+        echo '<div class="p-8 text-center"><div class="text-4xl mb-4">🏖️</div><p class="text-gray-600">' . h(__('beach.beach_not_found')) . '</p></div>';
         exit;
     }
 }
@@ -65,12 +76,12 @@ $beach['aliases'] = array_column(
 );
 
 $beach['features'] = query(
-    'SELECT title, description FROM beach_features WHERE beach_id = :id ORDER BY position',
+    'SELECT title, title_es, description, description_es FROM beach_features WHERE beach_id = :id ORDER BY position',
     [':id' => $beach['id']]
 );
 
 $beach['tips'] = query(
-    'SELECT category, tip FROM beach_tips WHERE beach_id = :id ORDER BY position',
+    'SELECT category, tip, tip_es FROM beach_tips WHERE beach_id = :id ORDER BY position',
     [':id' => $beach['id']]
 );
 

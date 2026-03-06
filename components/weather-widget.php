@@ -14,7 +14,8 @@ $size = $size ?? 'compact';
 if (!$weather || !isset($weather['current'])) {
     // Show placeholder if no weather data
     if ($size !== 'compact') {
-        echo '<div class="weather-widget weather-error text-sm text-gray-400">Weather unavailable</div>';
+        $unavailMsg = function_exists('__') ? __('weather.unavailable') : 'Weather unavailable';
+        echo '<div class="weather-widget weather-error text-sm text-gray-400">' . h($unavailMsg) . '</div>';
     }
     return;
 }
@@ -49,15 +50,15 @@ $windDir = getWindDirection($current['wind_direction'] ?? 0);
     </div>
     <div class="grid grid-cols-3 gap-2 text-center text-xs">
         <div class="bg-white/5 rounded p-2">
-            <div class="text-gray-400">Wind</div>
-            <div class="text-white font-medium"><?= round($current['wind_speed']) ?>mph</div>
+            <div class="text-gray-400"><?= h(function_exists('__') ? __('weather.wind') : 'Wind') ?></div>
+            <div class="text-white font-medium"><?= round($current['wind_speed']) ?><?= h(function_exists('__') ? __('weather_ui.mph') : 'mph') ?></div>
         </div>
         <div class="bg-white/5 rounded p-2">
-            <div class="text-gray-400">UV</div>
+            <div class="text-gray-400"><?= h(function_exists('__') ? __('weather_ui.uv_label') : 'UV') ?></div>
             <div class="text-brand-yellow font-medium"><?= $uvLevel['level'] ?></div>
         </div>
         <div class="bg-white/5 rounded p-2">
-            <div class="text-gray-400">Humidity</div>
+            <div class="text-gray-400"><?= h(function_exists('__') ? __('weather.humidity') : 'Humidity') ?></div>
             <div class="text-white font-medium"><?= round($current['humidity']) ?>%</div>
         </div>
     </div>
@@ -82,11 +83,11 @@ $windDir = getWindDirection($current['wind_direction'] ?? 0);
         <div class="text-right text-sm">
             <div class="flex items-center gap-1 text-gray-600">
                 <span>💨</span>
-                <span><?= round($current['wind_speed']) ?> mph <?= $windDir ?></span>
+                <span><?= round($current['wind_speed']) ?> <?= h(function_exists('__') ? __('weather_ui.mph') : 'mph') ?> <?= $windDir ?></span>
             </div>
             <div class="flex items-center gap-1 text-gray-600">
                 <span>☀️</span>
-                <span>UV <?= round($current['uv_index']) ?></span>
+                <span><?= h(function_exists('__') ? __('weather_ui.uv_label') : 'UV') ?> <?= round($current['uv_index']) ?></span>
             </div>
         </div>
     </div>
@@ -94,7 +95,7 @@ $windDir = getWindDirection($current['wind_direction'] ?? 0);
     <!-- Beach Score Bar -->
     <div class="mt-2 pt-2 border-t border-blue-100">
         <div class="flex items-center justify-between text-xs mb-1">
-            <span class="text-gray-600">Beach Score</span>
+            <span class="text-gray-600"><?= h(function_exists('__') ? __('weather_ui.beach_score') : 'Beach Score') ?></span>
             <span class="font-medium text-<?= $recommendation['color'] ?>-600"><?= $current['beach_score'] ?>%</span>
         </div>
         <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -106,6 +107,17 @@ $windDir = getWindDirection($current['wind_direction'] ?? 0);
 
 <?php else: ?>
 <!-- Full: For beach detail page - Dark Theme -->
+<?php
+$_t = function_exists('__');
+$_feelsLabel = $_t ? __('weather.feels') : 'Feels';
+$_currentLabel = $_t ? __('weather_ui.current_label') : 'Current';
+$_windSuffix = $_t ? __('weather_ui.wind_label') : 'wind';
+$_humidityLabel = $_t ? __('weather.humidity') : 'Humidity';
+$_sunriseLabel = $_t ? __('weather.sunrise') : 'Sunrise';
+$_sunsetLabel = $_t ? __('weather.sunset') : 'Sunset';
+$_forecastLabel = $_t ? __('weather.three_day_forecast') : '3-Day Forecast';
+$_todayLabel = $_t ? __('weather.today') : 'Today';
+?>
 <div class="weather-widget weather-full beach-detail-card overflow-hidden">
     <!-- Header with recommendation - Dark background -->
     <div class="bg-[#1c2128] p-5 border-b border-white/10">
@@ -119,7 +131,7 @@ $windDir = getWindDirection($current['wind_direction'] ?? 0);
             </div>
             <div class="text-right">
                 <div class="text-4xl font-bold text-brand-yellow"><?= round($current['temperature']) ?>°</div>
-                <div class="text-sm text-gray-400">Feels <?= round($current['feels_like']) ?>°</div>
+                <div class="text-sm text-gray-400"><?= h($_feelsLabel) ?> <?= round($current['feels_like']) ?>°</div>
             </div>
         </div>
     </div>
@@ -131,28 +143,28 @@ $windDir = getWindDirection($current['wind_direction'] ?? 0);
             <div class="text-center p-3 bg-white/5 rounded-lg border border-white/5">
                 <div class="text-2xl mb-1"><?= $current['icon'] ?></div>
                 <div class="text-sm font-medium text-white"><?= h($current['description']) ?></div>
-                <div class="text-xs text-gray-500">Current</div>
+                <div class="text-xs text-gray-500"><?= h($_currentLabel) ?></div>
             </div>
 
             <!-- Wind -->
             <div class="text-center p-3 bg-white/5 rounded-lg border border-white/5">
                 <div class="text-2xl mb-1">💨</div>
-                <div class="text-sm font-medium text-white"><?= round($current['wind_speed']) ?> mph</div>
-                <div class="text-xs text-gray-500"><?= $windDir ?> wind</div>
+                <div class="text-sm font-medium text-white"><?= round($current['wind_speed']) ?> <?= h(function_exists('__') ? __('weather_ui.mph') : 'mph') ?></div>
+                <div class="text-xs text-gray-500"><?= $windDir ?> <?= h($_windSuffix) ?></div>
             </div>
 
             <!-- UV Index -->
             <div class="text-center p-3 bg-white/5 rounded-lg border border-white/5">
                 <div class="text-2xl mb-1">☀️</div>
                 <div class="text-sm font-medium text-brand-yellow"><?= $uvLevel['level'] ?></div>
-                <div class="text-xs text-gray-500">UV <?= round($current['uv_index']) ?></div>
+                <div class="text-xs text-gray-500"><?= h(function_exists('__') ? __('weather_ui.uv_label') : 'UV') ?> <?= round($current['uv_index']) ?></div>
             </div>
 
             <!-- Humidity -->
             <div class="text-center p-3 bg-white/5 rounded-lg border border-white/5">
                 <div class="text-2xl mb-1">💧</div>
                 <div class="text-sm font-medium text-white"><?= round($current['humidity']) ?>%</div>
-                <div class="text-xs text-gray-500">Humidity</div>
+                <div class="text-xs text-gray-500"><?= h($_humidityLabel) ?></div>
             </div>
         </div>
 
@@ -171,11 +183,11 @@ $windDir = getWindDirection($current['wind_direction'] ?? 0);
         <div class="mt-4 flex items-center justify-center gap-6 text-sm text-gray-400">
             <div class="flex items-center gap-1">
                 <span>🌅</span>
-                <span>Sunrise <?= formatSunTime($weather['sunrise']) ?></span>
+                <span><?= h($_sunriseLabel) ?> <?= formatSunTime($weather['sunrise']) ?></span>
             </div>
             <div class="flex items-center gap-1">
                 <span>🌇</span>
-                <span>Sunset <?= formatSunTime($weather['sunset']) ?></span>
+                <span><?= h($_sunsetLabel) ?> <?= formatSunTime($weather['sunset']) ?></span>
             </div>
         </div>
         <?php endif; ?>
@@ -184,12 +196,17 @@ $windDir = getWindDirection($current['wind_direction'] ?? 0);
     <!-- 3-day forecast -->
     <?php if (!empty($weather['daily'])): ?>
     <div class="border-t border-white/10 p-4">
-        <h4 class="text-sm font-semibold text-gray-400 mb-3">3-Day Forecast</h4>
+        <h4 class="text-sm font-semibold text-gray-400 mb-3"><?= h($_forecastLabel) ?></h4>
         <div class="grid grid-cols-3 gap-2">
             <?php foreach (array_slice($weather['daily'], 0, 3) as $i => $day): ?>
+            <?php
+                $dayNum = date('w', strtotime($day['date'])); // 0=Sun, 1=Mon, ...
+                $dayKeys = ['day_sun', 'day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat'];
+                $dayLabel = function_exists('__') ? __('weather_ui.' . $dayKeys[$dayNum]) : date('D', strtotime($day['date']));
+            ?>
             <div class="text-center p-2 <?= $i === 0 ? 'bg-brand-yellow/10 border border-brand-yellow/20 rounded-lg' : '' ?>">
                 <div class="text-xs font-medium <?= $i === 0 ? 'text-brand-yellow' : 'text-gray-500' ?>">
-                    <?= $i === 0 ? 'Today' : date('D', strtotime($day['date'])) ?>
+                    <?= $i === 0 ? h($_todayLabel) : h($dayLabel) ?>
                 </div>
                 <div class="text-xl my-1"><?= getWeatherIcon($day['weather_code']) ?></div>
                 <div class="text-sm font-medium text-white">

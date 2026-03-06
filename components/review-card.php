@@ -17,7 +17,7 @@ $visitDate = $review['visit_date'] ?? '';
 $visitedWith = $review['visited_with'] ?? $review['visit_type'] ?? '';
 $helpfulCount = $review['helpful_count'] ?? 0;
 $createdAt = $review['created_at'] ?? '';
-$userName = $review['user_name'] ?? 'Beach Visitor';
+$userName = $review['user_name'] ?? __('reviews.default_visitor');
 $userAvatar = $review['avatar_url'] ?? null;
 $userInitial = strtoupper(substr($userName, 0, 1));
 $userId = $review['user_id'] ?? null;
@@ -47,16 +47,17 @@ if ($reviewId) {
 $timeAgo = $createdAt ? timeAgo($createdAt) : '';
 $visitDateFormatted = $visitDate ? date('M Y', strtotime($visitDate)) : '';
 
-// Visit type labels
-$visitedWithLabels = [
-    'solo' => 'Solo',
-    'partner' => 'Couple',
-    'couple' => 'Couple',
-    'family' => 'Family',
-    'friends' => 'Friends',
-    'group' => 'Group'
+// Visit type labels (use i18n)
+$visitedWithMap = [
+    'solo' => 'solo',
+    'partner' => 'couple',
+    'couple' => 'couple',
+    'family' => 'family',
+    'friends' => 'friends',
+    'group' => 'group'
 ];
-$visitedWithLabel = $visitedWithLabels[$visitedWith] ?? '';
+$visitedWithKey = $visitedWithMap[$visitedWith] ?? '';
+$visitedWithLabel = $visitedWithKey ? __('reviews.trip_types.' . $visitedWithKey) : '';
 
 // Star display
 $stars = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
@@ -90,16 +91,16 @@ $stars = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
                 <span class="text-xs text-gray-400"><?= h($timeAgo) ?></span>
                 <?php endif; ?>
                 <?php if ($visitDateFormatted): ?>
-                <span class="text-xs text-gray-400">Visited <?= $visitDateFormatted ?></span>
+                <span class="text-xs text-gray-400"><?= h(__('reviews.visited_on', ['date' => $visitDateFormatted])) ?></span>
                 <?php endif; ?>
             </div>
         </div>
 
         <!-- Delete button for own reviews -->
         <?php if ($isOwnReview): ?>
-        <button onclick="deleteReview(<?= intval($reviewId) ?>)"
+        <button data-action="deleteReview" data-action-args='[<?= intval($reviewId) ?>]'
                 class="text-gray-400 hover:text-red-500 p-1 transition-colors"
-                title="Delete your review">
+                title="<?= h(__('reviews.delete_review')) ?>">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
         </button>
         <?php endif; ?>
@@ -122,7 +123,7 @@ $stars = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
         <div class="flex-1 bg-green-50 rounded-lg p-3">
             <div class="flex items-center gap-1 text-green-700 font-medium mb-1">
                 <i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i>
-                <span>Pros</span>
+                <span><?= h(__('reviews.pros')) ?></span>
             </div>
             <p class="text-green-800 text-xs"><?= h($pros) ?></p>
         </div>
@@ -131,7 +132,7 @@ $stars = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
         <div class="flex-1 bg-red-50 rounded-lg p-3">
             <div class="flex items-center gap-1 text-red-700 font-medium mb-1">
                 <i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i>
-                <span>Cons</span>
+                <span><?= h(__('reviews.cons')) ?></span>
             </div>
             <p class="text-red-800 text-xs"><?= h($cons) ?></p>
         </div>
@@ -143,10 +144,10 @@ $stars = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
     <?php if (!empty($photos)): ?>
     <div class="flex gap-2 mb-3 overflow-x-auto pb-2 -mx-1 px-1">
         <?php foreach ($photos as $photo): ?>
-        <button onclick="openPhotoModal('/uploads/photos/<?= h($photo['filename']) ?>', '<?= h(addslashes($photo['caption'] ?? '')) ?>')"
+        <button data-action="openPhotoModal" data-action-args='["/uploads/photos/<?= h($photo['filename']) ?>","<?= h(addslashes($photo['caption'] ?? '')) ?>"]'
                 class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden hover:opacity-90 transition-opacity">
             <img src="/uploads/photos/thumbs/<?= h($photo['filename']) ?>"
-                 alt="<?= h($photo['caption'] ?? 'Beach photo') ?>"
+                 alt="<?= h($photo['caption'] ?? __('reviews.beach_photo')) ?>"
                  class="w-full h-full object-cover"
                  loading="lazy">
         </button>
@@ -157,29 +158,29 @@ $stars = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
     <!-- Footer actions -->
     <div class="flex items-center gap-4 pt-3 border-t border-gray-100">
         <!-- Helpful button -->
-        <button onclick="voteReview(<?= intval($reviewId) ?>, this)"
+        <button data-action="voteReview" data-action-args='[<?= intval($reviewId) ?>,"__this__"]'
                 class="helpful-btn flex items-center gap-1.5 text-sm <?= $userVoted ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600' ?> transition-colors"
                 data-voted="<?= $userVoted ? 'true' : 'false' ?>"
                 data-review-id="<?= h($reviewId) ?>">
             <i data-lucide="thumbs-up" class="w-4 h-4"></i>
-            <span>Helpful</span>
+            <span><?= h(__('reviews.helpful')) ?></span>
             <?php if ($helpfulCount > 0): ?>
             <span class="helpful-count text-xs bg-gray-100 px-1.5 py-0.5 rounded-full"><?= $helpfulCount ?></span>
             <?php endif; ?>
         </button>
 
         <!-- Share button -->
-        <button onclick="shareReview(<?= intval($reviewId) ?>)"
+        <button data-action="shareReview" data-action-args='[<?= intval($reviewId) ?>]'
                 class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
             <i data-lucide="share-2" class="w-4 h-4"></i>
-            <span>Share</span>
+            <span><?= h(__('common.share')) ?></span>
         </button>
 
         <!-- Report button (only for others' reviews) -->
         <?php if (!$isOwnReview): ?>
-        <button onclick="reportReview(<?= intval($reviewId) ?>)"
+        <button data-action="reportReview" data-action-args='[<?= intval($reviewId) ?>]'
                 class="ml-auto text-gray-400 hover:text-gray-600 text-xs transition-colors">
-            Report
+            <?= h(__('reviews.report')) ?>
         </button>
         <?php endif; ?>
     </div>

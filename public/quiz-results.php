@@ -15,23 +15,25 @@ if (isset($_COOKIE['BEACH_FINDER_SESSION']) && session_status() === PHP_SESSION_
 require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
+require_once APP_ROOT . '/inc/i18n.php';
 
 $token = trim((string)($_GET['token'] ?? ''));
 if ($token === '') {
-    $pageTitle = 'Quiz Results';
-    $pageDescription = 'Take the Beach Match Quiz to get a shareable results link.';
+    $pageTitle = __('quiz_results.title');
+    $pageDescription = __('quiz_results.no_quiz_desc');
     include APP_ROOT . '/components/header.php';
     ?>
     <section class="hero-gradient-dark text-white py-12 md:py-16">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-3xl md:text-5xl font-bold mb-4">Quiz Results</h1>
-            <p class="text-lg md:text-xl opacity-90">Take the Beach Match Quiz to get a shareable results link.</p>
+            <h1 class="text-3xl md:text-5xl font-bold mb-4"><?= h(__('quiz_results.title')) ?></h1>
+            <p class="text-lg md:text-xl opacity-90"><?= h(__('quiz_results.no_quiz_desc')) ?></p>
             <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a href="/quiz" class="inline-flex items-center justify-center bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-5 py-2.5 rounded-lg font-semibold transition-colors">
-                    Take the quiz
+                    <?= h(__('quiz_results.take_quiz')) ?>
                 </a>
                 <a href="/best-beaches" class="inline-flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2.5 rounded-lg font-medium transition-colors">
-                    Browse best beaches
+                    <?= h(__('quiz_results.browse_best')) ?>
                 </a>
             </div>
         </div>
@@ -45,10 +47,10 @@ $robotsOverride = 'noindex, nofollow, noarchive';
 $row = queryOne('SELECT * FROM quiz_results WHERE token = :token', [':token' => $token]);
 if (!$row) {
     http_response_code(404);
-    $pageTitle = 'Quiz Results Not Found';
-    $pageDescription = 'Quiz results not found.';
+    $pageTitle = __('quiz_results.not_found_title');
+    $pageDescription = __('quiz_results.not_found_desc');
     include APP_ROOT . '/components/header.php';
-    echo '<div class="max-w-2xl mx-auto px-4 py-16 text-center"><h1 class="text-2xl font-bold text-white mb-3">Quiz results not found</h1><p class="text-gray-400">The link may have expired or is invalid.</p></div>';
+    echo '<div class="max-w-2xl mx-auto px-4 py-16 text-center"><h1 class="text-2xl font-bold text-white mb-3">' . h(__('quiz_results.not_found_heading')) . '</h1><p class="text-gray-400">' . h(__('quiz_results.not_found_expired')) . '</p></div>';
     include APP_ROOT . '/components/footer.php';
     exit;
 }
@@ -56,10 +58,10 @@ if (!$row) {
 $matches = json_decode((string)($row['matched_beaches'] ?? '[]'), true);
 if (!is_array($matches) || empty($matches)) {
     http_response_code(404);
-    $pageTitle = 'Quiz Results Not Found';
-    $pageDescription = 'Quiz results not found.';
+    $pageTitle = __('quiz_results.not_found_title');
+    $pageDescription = __('quiz_results.not_found_desc');
     include APP_ROOT . '/components/header.php';
-    echo '<div class="max-w-2xl mx-auto px-4 py-16 text-center"><h1 class="text-2xl font-bold text-white mb-3">Quiz results not found</h1><p class="text-gray-400">No matches were stored for this quiz.</p></div>';
+    echo '<div class="max-w-2xl mx-auto px-4 py-16 text-center"><h1 class="text-2xl font-bold text-white mb-3">' . h(__('quiz_results.not_found_heading')) . '</h1><p class="text-gray-400">' . h(__('quiz_results.not_found_empty')) . '</p></div>';
     include APP_ROOT . '/components/footer.php';
     exit;
 }
@@ -81,24 +83,24 @@ if (!empty($beachIds)) {
     }
 }
 
-$pageTitle = 'Your Beach Matches';
-$pageDescription = 'Your Puerto Rico beach matches from the Beach Match Quiz.';
+$pageTitle = __('quiz_results.your_matches');
+$pageDescription = __('quiz_results.matches_desc');
 include APP_ROOT . '/components/header.php';
 ?>
 
 <section class="hero-gradient-dark text-white py-12 md:py-16">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 class="text-3xl md:text-5xl font-bold mb-4">Your Beach Matches</h1>
-        <p class="text-lg md:text-xl opacity-90">Save this link or share it with friends.</p>
+        <h1 class="text-3xl md:text-5xl font-bold mb-4"><?= h(__('quiz_results.your_matches')) ?></h1>
+        <p class="text-lg md:text-xl opacity-90"><?= h(__('quiz_results.save_link')) ?></p>
         <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href="/quiz" class="inline-flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2.5 rounded-lg font-medium transition-colors">
-                Retake quiz
+                <?= h(__('quiz_results.retake')) ?>
             </a>
             <button type="button"
-                    onclick="bfShareCurrentQuizResults()"
+                    data-action="bfShareCurrentQuizResults"
                     data-bf-source="quiz_results"
                     class="inline-flex items-center justify-center bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-5 py-2.5 rounded-lg font-semibold transition-colors">
-                Share
+                <?= h(__('quiz_results.share')) ?>
             </button>
         </div>
     </div>
@@ -107,7 +109,7 @@ include APP_ROOT . '/components/header.php';
 <section class="py-10 bg-brand-dark">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h2 class="text-xl font-bold text-white mb-4">Top matches</h2>
+            <h2 class="text-xl font-bold text-white mb-4"><?= h(__('quiz_results.top_matches')) ?></h2>
 
             <div class="space-y-4">
                 <?php foreach ($matches as $m):
@@ -116,7 +118,7 @@ include APP_ROOT . '/components/header.php';
                     $reasons = $m['match_reasons'] ?? [];
                     $b = $id && isset($beachesById[$id]) ? $beachesById[$id] : null;
                     $slug = (string)($b['slug'] ?? ($m['slug'] ?? ''));
-                    $name = (string)($b['name'] ?? ($m['name'] ?? 'Beach'));
+                    $name = (string)($b['name'] ?? ($m['name'] ?? __('beach.beach')));
                     $muni = (string)($b['municipality'] ?? ($m['municipality'] ?? ''));
                     $cover = (string)($b['cover_image'] ?? ($m['cover_image'] ?? '/images/beaches/placeholder-beach.webp'));
                 ?>
@@ -144,13 +146,13 @@ include APP_ROOT . '/components/header.php';
                         <div class="mt-3 flex flex-wrap gap-2">
                             <a href="/beach/<?= h($slug) ?>"
                                class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm border border-white/10 transition-colors">
-                                View details
+                                <?= h(__('quiz_results.view_details')) ?>
                             </a>
                             <?php if ($b): ?>
                             <a href="<?= h(getDirectionsUrl($b)) ?>" target="_blank" rel="noopener noreferrer"
                                data-bf-track="directions"
                                class="inline-flex items-center gap-2 bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-3 py-2 rounded-lg text-sm font-semibold transition-colors">
-                                Directions
+                                <?= h(__('quiz_results.directions')) ?>
                             </a>
                             <?php endif; ?>
                         </div>
@@ -164,11 +166,17 @@ include APP_ROOT . '/components/header.php';
 
 <?php include APP_ROOT . '/components/footer.php'; ?>
 
-<script>
+<script <?= cspNonceAttr() ?>>
+window.QR_STRINGS = <?= json_encode([
+    'share_title' => __('quiz_results.share_title'),
+    'share_text' => __('quiz_results.share_text'),
+    'link_copied' => __('quiz_results.link_copied'),
+    'share_error' => __('quiz_results.share_error'),
+]) ?>;
 async function bfShareCurrentQuizResults() {
     const url = window.location.href;
-    const title = 'My Puerto Rico Beach Matches';
-    const text = 'Here are my Puerto Rico beach matches.';
+    const title = QR_STRINGS.share_title;
+    const text = QR_STRINGS.share_text;
 
     if (typeof window.bfTrack === 'function') {
         window.bfTrack('share_click', { source: 'quiz_results' });
@@ -186,11 +194,11 @@ async function bfShareCurrentQuizResults() {
     try {
         await navigator.clipboard.writeText(url);
         if (typeof window.showToast === 'function') {
-            window.showToast('Link copied!', 'success', 2500);
+            window.showToast(QR_STRINGS.link_copied, 'success', 2500);
         }
     } catch (e) {
         if (typeof window.showToast === 'function') {
-            window.showToast('Could not share. Copy the URL from the address bar.', 'warning', 3500);
+            window.showToast(QR_STRINGS.share_error, 'warning', 3500);
         }
     }
 }

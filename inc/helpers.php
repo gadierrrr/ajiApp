@@ -234,6 +234,35 @@ function csrfField() {
     return '<input type="hidden" name="csrf_token" value="' . h(csrfToken()) . '">';
 }
 
+function detectImageSignature(string $path): ?array {
+    if ($path === '' || !is_file($path)) {
+        return null;
+    }
+
+    if (function_exists('exif_imagetype')) {
+        $type = @exif_imagetype($path);
+        if ($type !== false) {
+            return [
+                'type' => (int) $type,
+                'mime' => image_type_to_mime_type($type),
+            ];
+        }
+    }
+
+    $imageInfo = @getimagesize($path);
+    if (is_array($imageInfo) && isset($imageInfo[2])) {
+        $type = (int) $imageInfo[2];
+        $mime = (string) ($imageInfo['mime'] ?? image_type_to_mime_type($type));
+
+        return [
+            'type' => $type,
+            'mime' => $mime,
+        ];
+    }
+
+    return null;
+}
+
 // Beach-specific helpers
 
 function getBeachUrl($beach) {
@@ -259,6 +288,12 @@ function getDirectionsUrl($beach) {
 }
 
 function getShareText($beach) {
+    if (function_exists('__')) {
+        return __('js.share_check_out', [
+            'name' => $beach['name'],
+            'municipality' => $beach['municipality']
+        ]);
+    }
     return "Check out " . $beach['name'] . " in " . $beach['municipality'] . ", Puerto Rico!";
 }
 
@@ -356,6 +391,23 @@ function getConditionDotClass($value) {
  * Get descriptive label for swim difficulty level
  */
 function getSwimDifficultyLabel($level) {
+    // Try i18n lookup first (when i18n system is loaded)
+    if (function_exists('__')) {
+        $keys = [
+            1 => 'beach.swim_very_easy',
+            2 => 'beach.swim_easy',
+            3 => 'beach.swim_moderate',
+            4 => 'beach.swim_challenging',
+            5 => 'beach.swim_experts_only',
+        ];
+        if (isset($keys[$level])) {
+            $translated = __($keys[$level]);
+            if ($translated !== $keys[$level]) {
+                return $translated;
+            }
+        }
+    }
+    // Hardcoded English fallback
     $labels = [
         1 => 'Very Easy',
         2 => 'Easy',
@@ -402,25 +454,52 @@ function formatDistance($meters) {
 }
 
 function timeAgo($datetime) {
-    if (!$datetime) return 'Never';
+    if (!$datetime) return function_exists('__') ? __('time.never') : 'Never';
 
     $time = strtotime($datetime);
     $now = time();
     $diff = $now - $time;
 
+    $useI18n = function_exists('__');
+
     if ($diff < 60) {
-        return 'Just now';
+        return $useI18n ? __('time.just_now') : 'Just now';
     } elseif ($diff < 3600) {
-        $mins = floor($diff / 60);
+        $mins = (int)floor($diff / 60);
+        if ($useI18n) {
+            return $mins === 1 ? __('time.minute_ago') : __('time.minutes_ago', ['count' => $mins]);
+        }
         return $mins . ' minute' . ($mins > 1 ? 's' : '') . ' ago';
     } elseif ($diff < 86400) {
-        $hours = floor($diff / 3600);
+        $hours = (int)floor($diff / 3600);
+        if ($useI18n) {
+            return $hours === 1 ? __('time.hour_ago') : __('time.hours_ago', ['count' => $hours]);
+        }
         return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
     } elseif ($diff < 604800) {
-        $days = floor($diff / 86400);
+        $days = (int)floor($diff / 86400);
+        if ($useI18n) {
+            return $days === 1 ? __('time.day_ago') : __('time.days_ago', ['count' => $days]);
+        }
         return $days . ' day' . ($days > 1 ? 's' : '') . ' ago';
+    } elseif ($diff < 2592000) {
+        $weeks = (int)floor($diff / 604800);
+        if ($useI18n) {
+            return $weeks === 1 ? __('time.week_ago') : __('time.weeks_ago', ['count' => $weeks]);
+        }
+        return $weeks . ' week' . ($weeks > 1 ? 's' : '') . ' ago';
+    } elseif ($diff < 31536000) {
+        $months = (int)floor($diff / 2592000);
+        if ($useI18n) {
+            return $months === 1 ? __('time.month_ago') : __('time.months_ago', ['count' => $months]);
+        }
+        return $months . ' month' . ($months > 1 ? 's' : '') . ' ago';
     } else {
-        return date('M j, Y', $time);
+        $years = (int)floor($diff / 31536000);
+        if ($useI18n) {
+            return $years === 1 ? __('time.year_ago') : __('time.years_ago', ['count' => $years]);
+        }
+        return $years . ' year' . ($years > 1 ? 's' : '') . ' ago';
     }
 }
 
@@ -647,12 +726,12 @@ function getBeachImageAlt($beach, $context = '') {
  */
 function getScoreLabel($rating) {
     if ($rating === null) return '';
-    if ($rating >= 4.8) return 'Exceptional';
-    if ($rating >= 4.5) return 'Excellent';
-    if ($rating >= 4.0) return 'Very Good';
-    if ($rating >= 3.5) return 'Good';
-    if ($rating >= 3.0) return 'Average';
-    return 'Below Avg';
+    if ($rating >= 4.8) return function_exists('__') ? __('beach.score_exceptional') : 'Exceptional';
+    if ($rating >= 4.5) return function_exists('__') ? __('beach.score_excellent') : 'Excellent';
+    if ($rating >= 4.0) return function_exists('__') ? __('beach.score_very_good') : 'Very Good';
+    if ($rating >= 3.5) return function_exists('__') ? __('beach.score_good') : 'Good';
+    if ($rating >= 3.0) return function_exists('__') ? __('beach.score_average') : 'Average';
+    return function_exists('__') ? __('beach.score_below_avg') : 'Below Avg';
 }
 
 /**
@@ -712,6 +791,13 @@ function getWindPercentage($wind) {
  */
 function getConditionLabel($type, $value) {
     if (!$value) return 'Unknown';
+    if (function_exists('__')) {
+        $key = "conditions.{$type}.{$value}";
+        $translated = __($key);
+        if ($translated !== $key) {
+            return $translated;
+        }
+    }
     return ucfirst($value);
 }
 
@@ -744,6 +830,14 @@ function getTagEmoji($tag) {
  * Get display label for a tag
  */
 function getTagLabel($tag) {
+    // Try i18n lookup first (when i18n system is loaded)
+    if (function_exists('__')) {
+        $translated = __('tags.' . $tag);
+        if ($translated !== 'tags.' . $tag) {
+            return $translated;
+        }
+    }
+    // Hardcoded English fallback for admin/CLI contexts
     $labels = [
         'calm-waters' => 'Calm Waters',
         'surfing' => 'Surfing',
@@ -765,6 +859,14 @@ function getTagLabel($tag) {
  * Get display label for an amenity
  */
 function getAmenityLabel($amenity) {
+    // Try i18n lookup first (when i18n system is loaded)
+    if (function_exists('__')) {
+        $translated = __('amenities.' . $amenity);
+        if ($translated !== 'amenities.' . $amenity) {
+            return $translated;
+        }
+    }
+    // Hardcoded English fallback for admin/CLI contexts
     $labels = [
         'restrooms' => 'Restrooms',
         'showers' => 'Showers',
@@ -778,6 +880,46 @@ function getAmenityLabel($amenity) {
         'water-sports' => 'Water Sports',
     ];
     return $labels[$amenity] ?? ucwords(str_replace('-', ' ', $amenity));
+}
+
+/**
+ * Get display label for parking difficulty
+ */
+function getParkingLabel($difficulty) {
+    if (function_exists('__')) {
+        $translated = __('parking.' . $difficulty);
+        if ($translated !== 'parking.' . $difficulty) {
+            return $translated;
+        }
+    }
+    $labels = [
+        'easy' => 'Easy Parking',
+        'moderate' => 'Moderate',
+        'difficult' => 'Difficult',
+        'very-difficult' => 'Very Difficult',
+    ];
+    return $labels[$difficulty] ?? ucwords(str_replace('-', ' ', $difficulty));
+}
+
+/**
+ * Get display label for a content section type
+ */
+function getContentSectionLabel($sectionType) {
+    if (function_exists('__')) {
+        $translated = __('content_sections.' . $sectionType);
+        if ($translated !== 'content_sections.' . $sectionType) {
+            return $translated;
+        }
+    }
+    $labels = [
+        'history' => 'History & Background',
+        'best_time' => 'Best Time to Visit',
+        'getting_there' => 'Getting There',
+        'what_to_bring' => 'What to Bring',
+        'nearby' => 'Nearby Attractions',
+        'local_tips' => 'Local Tips',
+    ];
+    return $labels[$sectionType] ?? ucwords(str_replace('_', ' ', $sectionType));
 }
 
 // ========================================
@@ -827,12 +969,12 @@ function getBeachBadges($beach) {
  */
 function getBadgeInfo($badgeKey) {
     $badges = [
-        'top-rated' => ['emoji' => '🏆', 'label' => 'Top Rated', 'color' => 'gold'],
-        'family-pick' => ['emoji' => '👨‍👩‍👧', 'label' => 'Family Pick', 'color' => 'purple'],
-        'hidden-gem' => ['emoji' => '💎', 'label' => 'Hidden Gem', 'color' => 'blue'],
-        'surfer-fave' => ['emoji' => '🏄', 'label' => "Surfer's Fave", 'color' => 'cyan'],
-        'instagram-worthy' => ['emoji' => '📸', 'label' => 'Insta-Worthy', 'color' => 'pink'],
-        'local-secret' => ['emoji' => '🤫', 'label' => 'Local Secret', 'color' => 'green'],
+        'top-rated' => ['emoji' => '🏆', 'label' => function_exists('__') ? __('badges.top_rated') : 'Top Rated', 'color' => 'gold'],
+        'family-pick' => ['emoji' => '👨‍👩‍👧', 'label' => function_exists('__') ? __('badges.family_pick') : 'Family Pick', 'color' => 'purple'],
+        'hidden-gem' => ['emoji' => '💎', 'label' => function_exists('__') ? __('badges.hidden_gem') : 'Hidden Gem', 'color' => 'blue'],
+        'surfer-fave' => ['emoji' => '🏄', 'label' => function_exists('__') ? __('badges.surfers_fave') : "Surfer's Fave", 'color' => 'cyan'],
+        'instagram-worthy' => ['emoji' => '📸', 'label' => function_exists('__') ? __('badges.insta_worthy') : 'Insta-Worthy', 'color' => 'pink'],
+        'local-secret' => ['emoji' => '🤫', 'label' => function_exists('__') ? __('badges.local_secret') : 'Local Secret', 'color' => 'green'],
     ];
     return $badges[$badgeKey] ?? null;
 }
@@ -860,6 +1002,13 @@ function renderBeachBadge($badgeKey) {
  * Get parking difficulty label
  */
 function getParkingDifficultyLabel($difficulty) {
+    if ($difficulty !== null && function_exists('__')) {
+        $key = str_replace('-', '_', $difficulty);
+        $translated = __('parking.' . $key);
+        if ($translated !== 'parking.' . $key) {
+            return $translated;
+        }
+    }
     $labels = [
         'easy' => 'Easy Parking',
         'moderate' => 'Moderate',
@@ -873,6 +1022,13 @@ function getParkingDifficultyLabel($difficulty) {
  * Get parking difficulty description
  */
 function getParkingDifficultyDescription($difficulty) {
+    if ($difficulty !== null && function_exists('__')) {
+        $key = str_replace('-', '_', $difficulty);
+        $translated = __('parking_desc.' . $key);
+        if ($translated !== 'parking_desc.' . $key) {
+            return $translated;
+        }
+    }
     $descriptions = [
         'easy' => 'Plenty of parking available, rarely fills up',
         'moderate' => 'Usually find parking, may fill on weekends',
@@ -953,16 +1109,16 @@ function getBestForSummary($tags, $maxItems = 3) {
 
     // Priority order for "Best For" display
     $priority = [
-        'family-friendly' => 'Families',
-        'surfing' => 'Surfing',
-        'snorkeling' => 'Snorkeling',
-        'diving' => 'Diving',
-        'swimming' => 'Swimming',
-        'calm-waters' => 'Relaxing',
-        'scenic' => 'Photography',
-        'secluded' => 'Quiet Escape',
-        'fishing' => 'Fishing',
-        'camping' => 'Camping'
+        'family-friendly' => function_exists('__') ? __('best_for_labels.families') : 'Families',
+        'surfing' => function_exists('__') ? __('best_for_labels.surfing') : 'Surfing',
+        'snorkeling' => function_exists('__') ? __('best_for_labels.snorkeling') : 'Snorkeling',
+        'diving' => function_exists('__') ? __('best_for_labels.diving') : 'Diving',
+        'swimming' => function_exists('__') ? __('best_for_labels.swimming') : 'Swimming',
+        'calm-waters' => function_exists('__') ? __('best_for_labels.relaxing') : 'Relaxing',
+        'scenic' => function_exists('__') ? __('best_for_labels.photography') : 'Photography',
+        'secluded' => function_exists('__') ? __('best_for_labels.quiet_escape') : 'Quiet Escape',
+        'fishing' => function_exists('__') ? __('best_for_labels.fishing') : 'Fishing',
+        'camping' => function_exists('__') ? __('best_for_labels.camping') : 'Camping'
     ];
 
     $bestFor = [];
@@ -1209,7 +1365,7 @@ function getTagIconSvg($tag) {
 function getExplorerLevelInfo($level) {
     $levels = [
         'newcomer' => [
-            'label' => 'Newcomer',
+            'label' => function_exists('__') ? __('explorer.newcomer') : 'Newcomer',
             'icon' => '⭐',
             'color' => 'amber',
             'colorClass' => 'text-amber-400 bg-amber-500/20 border-amber-500/30',
@@ -1219,7 +1375,7 @@ function getExplorerLevelInfo($level) {
             'rank' => 1
         ],
         'explorer' => [
-            'label' => 'Explorer',
+            'label' => function_exists('__') ? __('explorer.explorer') : 'Explorer',
             'icon' => '⭐⭐',
             'color' => 'gray',
             'colorClass' => 'text-gray-300 bg-white/10 border-white/20',
@@ -1229,7 +1385,7 @@ function getExplorerLevelInfo($level) {
             'rank' => 2
         ],
         'guide' => [
-            'label' => 'Guide',
+            'label' => function_exists('__') ? __('explorer.guide') : 'Guide',
             'icon' => '⭐⭐⭐',
             'color' => 'yellow',
             'colorClass' => 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30',
@@ -1239,7 +1395,7 @@ function getExplorerLevelInfo($level) {
             'rank' => 3
         ],
         'expert' => [
-            'label' => 'Expert',
+            'label' => function_exists('__') ? __('explorer.expert') : 'Expert',
             'icon' => '⭐⭐⭐⭐',
             'color' => 'cyan',
             'colorClass' => 'text-cyan-400 bg-cyan-500/20 border-cyan-500/30',
@@ -1249,7 +1405,7 @@ function getExplorerLevelInfo($level) {
             'rank' => 4
         ],
         'legend' => [
-            'label' => 'Legend',
+            'label' => function_exists('__') ? __('explorer.legend') : 'Legend',
             'icon' => '👑',
             'color' => 'purple',
             'colorClass' => 'text-purple-400 bg-purple-500/20 border-purple-500/30',
@@ -1278,7 +1434,7 @@ function getExplorerProgress($beachesVisited, $currentLevel) {
             'percentage' => 100,
             'beaches_needed' => 0,
             'next_level' => null,
-            'message' => 'You\'ve reached the highest level!'
+            'message' => function_exists('__') ? __('explorer.highest_level') : 'You\'ve reached the highest level!'
         ];
     }
 
@@ -1296,7 +1452,13 @@ function getExplorerProgress($beachesVisited, $currentLevel) {
         'beaches_needed' => $beachesNeeded,
         'next_level' => $levelInfo['next_level'],
         'next_level_info' => $nextLevelInfo,
-        'message' => $beachesNeeded . ' more beach' . ($beachesNeeded !== 1 ? 'es' : '') . ' to ' . $nextLevelInfo['label']
+        'message' => (function() use ($beachesNeeded, $nextLevelInfo) {
+            if (function_exists('__')) {
+                $parts = explode('|', __('explorer.beaches_to_next', ['count' => $beachesNeeded, 'level' => $nextLevelInfo['label']]));
+                return $beachesNeeded === 1 ? $parts[0] : ($parts[1] ?? $parts[0]);
+            }
+            return $beachesNeeded . ' more beach' . ($beachesNeeded !== 1 ? 'es' : '') . ' to ' . $nextLevelInfo['label'];
+        })()
     ];
 }
 
@@ -1574,49 +1736,49 @@ function getRelatedGuides($beachTags = [], $limit = 3) {
     // Guide mapping: tag => guide data
     $guideMap = [
         'surfing' => [
-            'title' => 'Puerto Rico Surfing Guide',
+            'title' => function_exists('__') ? __('related_guides.surfing') : 'Puerto Rico Surfing Guide',
             'url' => '/guides/surfing-guide',
             'icon' => 'waves',
             'priority' => 10
         ],
         'snorkeling' => [
-            'title' => 'Snorkeling in Puerto Rico',
+            'title' => function_exists('__') ? __('related_guides.snorkeling') : 'Snorkeling in Puerto Rico',
             'url' => '/guides/snorkeling-guide',
             'icon' => 'fish',
             'priority' => 10
         ],
         'family' => [
-            'title' => 'Family Beach Vacation Planning',
+            'title' => function_exists('__') ? __('related_guides.family') : 'Family Beach Vacation Planning',
             'url' => '/guides/family-beach-vacation-planning',
             'icon' => 'users',
             'priority' => 9
         ],
         'photography' => [
-            'title' => 'Beach Photography Tips',
+            'title' => function_exists('__') ? __('related_guides.photography') : 'Beach Photography Tips',
             'url' => '/guides/beach-photography-tips',
             'icon' => 'camera',
             'priority' => 8
         ],
         'secluded' => [
-            'title' => 'Getting to Puerto Rico Beaches',
+            'title' => function_exists('__') ? __('related_guides.getting_there') : 'Getting to Puerto Rico Beaches',
             'url' => '/guides/getting-to-puerto-rico-beaches',
             'icon' => 'map-pin',
             'priority' => 7
         ],
         'remote' => [
-            'title' => 'Getting to Puerto Rico Beaches',
+            'title' => function_exists('__') ? __('related_guides.getting_there') : 'Getting to Puerto Rico Beaches',
             'url' => '/guides/getting-to-puerto-rico-beaches',
             'icon' => 'map-pin',
             'priority' => 7
         ],
         'wild' => [
-            'title' => 'Beach Safety Tips',
+            'title' => function_exists('__') ? __('related_guides.safety') : 'Beach Safety Tips',
             'url' => '/guides/beach-safety-tips',
             'icon' => 'shield',
             'priority' => 8
         ],
         'camping' => [
-            'title' => 'Beach Packing List',
+            'title' => function_exists('__') ? __('related_guides.packing') : 'Beach Packing List',
             'url' => '/guides/beach-packing-list',
             'icon' => 'backpack',
             'priority' => 6
@@ -1626,19 +1788,19 @@ function getRelatedGuides($beachTags = [], $limit = 3) {
     // Universal guides (always relevant, lower priority)
     $universalGuides = [
         [
-            'title' => 'Best Time to Visit Puerto Rico Beaches',
+            'title' => function_exists('__') ? __('related_guides.best_time') : 'Best Time to Visit Puerto Rico Beaches',
             'url' => '/guides/best-time-visit-puerto-rico-beaches',
             'icon' => 'calendar',
             'priority' => 5
         ],
         [
-            'title' => 'Beach Packing List',
+            'title' => function_exists('__') ? __('related_guides.packing') : 'Beach Packing List',
             'url' => '/guides/beach-packing-list',
             'icon' => 'backpack',
             'priority' => 4
         ],
         [
-            'title' => 'Beach Safety Tips',
+            'title' => function_exists('__') ? __('related_guides.safety') : 'Beach Safety Tips',
             'url' => '/guides/beach-safety-tips',
             'icon' => 'shield',
             'priority' => 3
@@ -1677,4 +1839,77 @@ function getRelatedGuides($beachTags = [], $limit = 3) {
 
     // Limit results
     return array_slice($relatedGuides, 0, $limit);
+}
+
+/**
+ * Sanitize HTML content to allow only safe tags for beach content sections.
+ */
+function sanitizeContentHtml(string $html): string {
+    return strip_tags($html, '<p><ul><ol><li><strong><em><h3><br>');
+}
+
+/**
+ * Get translated access label for a beach.
+ */
+function getAccessLabelTranslated(string $label): string {
+    if (!$label) return '';
+    if (!function_exists('getCurrentLanguage') || getCurrentLanguage() !== 'es') return $label;
+
+    static $map = [
+        '10-min walk' => 'caminata de 10 min',
+        '4×4 track & hike' => 'camino 4×4 y caminata',
+        'Easy Access' => 'Acceso fácil',
+        'boardwalk access' => 'acceso por paseo tablado',
+        'boat access' => 'acceso en bote',
+        'difficult hike' => 'caminata difícil',
+        'dirt pullouts & short paths' => 'desvíos de tierra y caminos cortos',
+        'dirt road & short walk' => 'camino de tierra y caminata corta',
+        'dirt track & walk' => 'camino de tierra y caminata',
+        'guided trail access' => 'acceso por sendero guiado',
+        'hike via reserve trail' => 'caminata por sendero de reserva',
+        'hike via trail' => 'caminata por sendero',
+        'hike via tunnel trail' => 'caminata por sendero del túnel',
+        'moderate hike' => 'caminata moderada',
+        'road & parking' => 'carretera y estacionamiento',
+        'road & short trail' => 'carretera y sendero corto',
+        'road & short walk' => 'carretera y caminata corta',
+        'roadside access' => 'acceso desde la carretera',
+        'rough road & short walk' => 'camino rústico y caminata corta',
+        'shore swim' => 'nado desde la orilla',
+        'shore/boat entry' => 'entrada por orilla/bote',
+        'short hike via streambed' => 'caminata corta por cauce',
+        'short path' => 'camino corto',
+        'short path from pullout' => 'camino corto desde desvío',
+        'short stairs/path' => 'escaleras/camino corto',
+        'short trail' => 'sendero corto',
+        'short trail from parking' => 'sendero corto desde estacionamiento',
+        'short trail from roadside' => 'sendero corto desde la carretera',
+        'short walk' => 'caminata corta',
+        'short walk from lot' => 'caminata corta desde el lote',
+        'short walk from parking' => 'caminata corta desde estacionamiento',
+        'short walk from track' => 'caminata corta desde camino',
+        'steep hike-in' => 'caminata empinada',
+        'steep trail from road' => 'sendero empinado desde carretera',
+        'street parking & beach access' => 'estacionamiento en calle y acceso a playa',
+        'street parking & beach entries' => 'estacionamiento en calle y entradas a playa',
+        'street parking & beach path' => 'estacionamiento en calle y camino a playa',
+        'street parking & beach paths' => 'estacionamiento en calle y caminos a playa',
+        'street parking & short walk' => 'estacionamiento en calle y caminata corta',
+        'street parking & walk' => 'estacionamiento en calle y caminata',
+        'trail access' => 'acceso por sendero',
+        'viewpoint; informal paths' => 'mirador; caminos informales',
+    ];
+
+    return $map[$label] ?? $label;
+}
+
+/**
+ * Strip accented characters for URL slug generation.
+ */
+function stripAccents(string $str): string {
+    $map = [
+        'á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ñ'=>'n','ü'=>'u',
+        'Á'=>'A','É'=>'E','Í'=>'I','Ó'=>'O','Ú'=>'U','Ñ'=>'N','Ü'=>'U',
+    ];
+    return strtr($str, $map);
 }

@@ -14,12 +14,17 @@
 
 require_once __DIR__ . '/../inc/helpers.php';
 
+$_t = function_exists('__');
+
 $contextType = isset($contextType) ? (string) $contextType : '';
 $contextKey = isset($contextKey) ? (string) $contextKey : '';
 $filtersQuery = isset($filtersQuery) ? (string) $filtersQuery : '';
 $pagePath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-$title = isset($title) && (string) $title !== '' ? (string) $title : 'Send me this list';
-$subtitle = isset($subtitle) && (string) $subtitle !== '' ? (string) $subtitle : 'Get the beaches + Google Maps links in your inbox (no account required).';
+$defaultTitle = $_t ? __('collection.send_list_title') : 'Send me this list';
+$defaultSubtitle = $_t ? __('collection.send_list_subtitle') : 'Get the beaches + Google Maps links in your inbox (no account required).';
+$title = isset($title) && (string) $title !== '' ? (string) $title : $defaultTitle;
+$subtitle = isset($subtitle) && (string) $subtitle !== '' ? (string) $subtitle : $defaultSubtitle;
+$sendLabel = $_t ? __('collection.send_button') : 'Send';
 
 if ($contextType === '' || $contextKey === '') {
     return;
@@ -48,7 +53,7 @@ if ($contextType === '' || $contextKey === '') {
 
             <button type="submit"
                     class="h-11 px-5 rounded-lg bg-brand-yellow hover:bg-yellow-300 text-brand-darker font-semibold transition-colors">
-                Send
+                <?= h($sendLabel) ?>
             </button>
         </form>
     </div>

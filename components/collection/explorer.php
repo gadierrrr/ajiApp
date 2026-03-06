@@ -15,6 +15,9 @@
 
 $collectionAnchorId = $collectionAnchorId ?? 'collection-explorer';
 $userFavorites = $userFavorites ?? [];
+
+$_t = function_exists('__');
+$_lang = function_exists('getCurrentLanguage') ? getCurrentLanguage() : 'en';
 ?>
 <section id="<?= h($collectionAnchorId) ?>" class="collection-page scroll-mt-24">
     <div id="collection-explorer-root"
@@ -32,8 +35,8 @@ $userFavorites = $userFavorites ?? [];
                 $contextType = 'collection';
                 $contextKey = (string) $collectionKey;
                 $filtersQuery = (string) ($_SERVER['QUERY_STRING'] ?? '');
-                $title = 'Send me this list';
-                $subtitle = 'Get the beaches and Google Maps links in your inbox (no account required).';
+                $title = $_t ? __('collection.send_list_title') : 'Send me this list';
+                $subtitle = $_t ? __('collection.send_list_subtitle') : 'Get the beaches and Google Maps links in your inbox (no account required).';
                 include APP_ROOT . '/components/send-list-capture.php';
                 ?>
             </div>
@@ -43,7 +46,7 @@ $userFavorites = $userFavorites ?? [];
         </div>
     </div>
 </section>
-<script>
+<script <?= cspNonceAttr() ?>>
 window.BF_MAP_CONTEXT = {
     mode: "collection",
     collection: <?= json_encode((string)$collectionKey) ?>,
@@ -61,6 +64,13 @@ window.BF_MAP_CONTEXT = {
     mapErrorId: "collection-map-error",
     mapEmptyId: "collection-map-empty",
     autoScroll: false,
-    updateUrl: false
+    updateUrl: false,
+    i18n: {
+        viewDetails: <?= json_encode($_t ? __('collection.view_details') : 'View Details') ?>,
+        directions: <?= json_encode($_t ? __('collection.get_directions') : 'Get Directions') ?>,
+        addFavorite: <?= json_encode($_t ? __('collection.add_favorite') : 'Add to favorites') ?>,
+        removeFavorite: <?= json_encode($_t ? __('collection.remove_favorite') : 'Remove from favorites') ?>
+    },
+    beachUrlPrefix: <?= json_encode($_lang === 'es' ? '/es/playa/' : '/beach/') ?>
 };
 </script>

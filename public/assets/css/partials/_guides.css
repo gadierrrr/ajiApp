@@ -52,23 +52,26 @@
 
 .guide-sidebar {
     min-width: 0;
-    align-self: start;  /* Critical for sticky positioning */
+    /* No position/height here — let the grid item stretch to full row height
+       so the sticky inner element (.guide-toc) has room to scroll */
 }
 
 @media (max-width: 1023px) {
     .guide-sidebar {
         order: 2;
+        position: static;
     }
     .guide-article {
         order: 1;
     }
 }
 
-/* Table of Contents - Sticky Sidebar (fixes disappearing TOC) */
+/* Table of Contents - sticky on the inner element so the grid item can stretch full height */
 .guide-toc {
     position: sticky;
-    top: 100px;
-    max-height: calc(100vh - 120px);
+    top: 76px;
+    height: fit-content;
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
     background: white;
     border-radius: 0.5rem;

@@ -11,6 +11,7 @@ session_start();
 require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/google-oauth.php';
+require_once APP_ROOT . '/inc/i18n.php';
 
 $redirectUrl = sanitizeInternalRedirect($_GET['redirect'] ?? '/');
 
@@ -21,6 +22,7 @@ if (isAuthenticated()) {
 
 $error = '';
 $success = '';
+$accountDeleted = isset($_GET['account_deleted']) && $_GET['account_deleted'] === '1';
 // Magic link temporarily disabled - redirect to main login if someone tries to access it
 $showMagicLinkForm = false; // Was: isset($_GET['method']) && $_GET['method'] === 'email';
 if (isset($_GET['method']) && $_GET['method'] === 'email') {
@@ -30,21 +32,21 @@ if (isset($_GET['method']) && $_GET['method'] === 'email') {
 // Handle OAuth error codes from callback
 if (isset($_GET['error'])) {
     $errorMessages = [
-        'google_denied' => 'Google sign-in was cancelled.',
-        'no_code' => 'Authentication failed. Please try again.',
-        'invalid_state' => 'Invalid request. Please try again.',
-        'token_failed' => 'Failed to authenticate with Google. Please try again.',
-        'userinfo_failed' => 'Failed to get your profile from Google.',
-        'email_not_verified' => 'Please verify your Google email address first.',
-        'user_creation_failed' => 'Failed to create account. Please try again.',
-        'google_not_configured' => 'Google sign-in is not configured.',
+        'google_denied' => __('login.error_google_denied'),
+        'no_code' => __('login.error_no_code'),
+        'invalid_state' => __('login.error_invalid_state'),
+        'token_failed' => __('login.error_token_failed'),
+        'userinfo_failed' => __('login.error_userinfo_failed'),
+        'email_not_verified' => __('login.error_email_not_verified'),
+        'user_creation_failed' => __('login.error_user_creation_failed'),
+        'google_not_configured' => __('login.error_google_not_configured'),
     ];
-    $error = $errorMessages[$_GET['error']] ?? 'Authentication error. Please try again.';
+    $error = $errorMessages[$_GET['error']] ?? __('login.error_generic');
 }
 
 // Handle session timeout
 if (isset($_GET['timeout'])) {
-    $error = 'Your session has expired. Please sign in again.';
+    $error = __('login.error_timeout');
 }
 
 // Handle form submission (magic link)
@@ -53,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validate CSRF
     if (!validateCsrf($_POST['csrf_token'] ?? '')) {
-        $error = 'Invalid request. Please try again.';
+        $error = __('login.error_csrf');
     } else {
         $email = trim($_POST['email'] ?? '');
         $result = sendMagicLink($email);
@@ -102,7 +104,7 @@ $reviewCount = $stats['reviewCount'];
 $checkinCount = $stats['checkinCount'];
 $featuredBeach = $stats['featuredBeach'];
 
-$pageTitle = 'Sign In';
+$pageTitle = __('login.title');
 $skipMapCSS = true; // Auth pages don't need map
 include APP_ROOT . '/components/header.php';
 ?>
@@ -129,12 +131,12 @@ include APP_ROOT . '/components/header.php';
             <!-- Tagline -->
             <div class="mb-8">
                 <h2 class="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
-                    Never miss a<br>
-                    <span class="text-brand-yellow">perfect</span><br>
-                    beach day
+                    <?= h(__('login.hero_title_1')) ?><br>
+                    <span class="text-brand-yellow"><?= h(__('login.hero_title_2')) ?></span><br>
+                    <?= h(__('login.hero_title_3')) ?>
                 </h2>
                 <p class="text-lg text-white/70 max-w-md">
-                    Join <?= h($userCountDisplay) ?>+ beach lovers who discovered their perfect spot in Puerto Rico.
+                    <?= h(__('login.hero_subtitle', ['count' => $userCountDisplay])) ?>
                 </p>
             </div>
 
@@ -145,8 +147,8 @@ include APP_ROOT . '/components/header.php';
                         <span class="text-2xl">🌤️</span>
                     </div>
                     <div>
-                        <h3 class="text-white font-semibold">Real-time conditions</h3>
-                        <p class="text-white/60 text-sm">Know before you go - weather & crowd updates</p>
+                        <h3 class="text-white font-semibold"><?= h(__('login.feature_conditions_title')) ?></h3>
+                        <p class="text-white/60 text-sm"><?= h(__('login.feature_conditions_desc')) ?></p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
@@ -154,8 +156,8 @@ include APP_ROOT . '/components/header.php';
                         <span class="text-2xl">❤️</span>
                     </div>
                     <div>
-                        <h3 class="text-white font-semibold">Never forget a great beach</h3>
-                        <p class="text-white/60 text-sm">Save favorites and build your bucket list</p>
+                        <h3 class="text-white font-semibold"><?= h(__('login.feature_favorites_title')) ?></h3>
+                        <p class="text-white/60 text-sm"><?= h(__('login.feature_favorites_desc')) ?></p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
@@ -163,8 +165,8 @@ include APP_ROOT . '/components/header.php';
                         <span class="text-2xl">🏆</span>
                     </div>
                     <div>
-                        <h3 class="text-white font-semibold">Earn explorer badges</h3>
-                        <p class="text-white/60 text-sm">Track your journey across the island</p>
+                        <h3 class="text-white font-semibold"><?= h(__('login.feature_badges_title')) ?></h3>
+                        <p class="text-white/60 text-sm"><?= h(__('login.feature_badges_desc')) ?></p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
@@ -172,27 +174,27 @@ include APP_ROOT . '/components/header.php';
                         <span class="text-2xl">👥</span>
                     </div>
                     <div>
-                        <h3 class="text-white font-semibold">Help others discover</h3>
-                        <p class="text-white/60 text-sm">Share reviews & photos with the community</p>
+                        <h3 class="text-white font-semibold"><?= h(__('login.feature_community_title')) ?></h3>
+                        <p class="text-white/60 text-sm"><?= h(__('login.feature_community_desc')) ?></p>
                     </div>
                 </div>
             </div>
 
             <!-- Community Stats -->
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/10 max-w-md">
-                <p class="text-white/60 text-sm mb-4">Our community has shared:</p>
+                <p class="text-white/60 text-sm mb-4"><?= h(__('login.community_shared')) ?></p>
                 <div class="grid grid-cols-3 gap-4 mb-4">
                     <div class="text-center">
                         <div class="text-2xl font-bold text-brand-yellow"><?= number_format(max($photoCount, 500)) ?>+</div>
-                        <div class="text-white/50 text-xs">Photos</div>
+                        <div class="text-white/50 text-xs"><?= h(__('login.stat_photos')) ?></div>
                     </div>
                     <div class="text-center">
                         <div class="text-2xl font-bold text-brand-yellow"><?= number_format(max($reviewCount, 200)) ?>+</div>
-                        <div class="text-white/50 text-xs">Reviews</div>
+                        <div class="text-white/50 text-xs"><?= h(__('login.stat_reviews')) ?></div>
                     </div>
                     <div class="text-center">
                         <div class="text-2xl font-bold text-brand-yellow"><?= number_format(max($checkinCount, 1000)) ?>+</div>
-                        <div class="text-white/50 text-xs">Check-ins</div>
+                        <div class="text-white/50 text-xs"><?= h(__('login.stat_checkins')) ?></div>
                     </div>
                 </div>
                 <div class="pt-4 border-t border-white/10">
@@ -204,9 +206,9 @@ include APP_ROOT . '/components/header.php';
                         <span class="text-brand-yellow">★</span>
                     </div>
                     <p class="text-white/90 italic text-sm">
-                        "Found 3 hidden beaches I never knew existed! This is my go-to for planning beach days."
+                        <?= h(__('login.testimonial')) ?>
                     </p>
-                    <p class="text-white/50 text-xs mt-2">— Maria R., San Juan</p>
+                    <p class="text-white/50 text-xs mt-2"><?= h(__('login.testimonial_author')) ?></p>
                 </div>
             </div>
         </div>
@@ -224,14 +226,14 @@ include APP_ROOT . '/components/header.php';
                         <div class="w-6 h-6 rounded-full bg-purple-500 border-2 border-brand-darker flex items-center justify-center text-[10px] text-white font-bold">C</div>
                         <div class="w-6 h-6 rounded-full bg-orange-500 border-2 border-brand-darker flex items-center justify-center text-[10px] text-white font-bold">+</div>
                     </div>
-                    <span class="text-sm text-brand-yellow font-medium">Join <?= h($userCountDisplay) ?>+ explorers</span>
+                    <span class="text-sm text-brand-yellow font-medium"><?= h(__('login.join_explorers', ['count' => $userCountDisplay])) ?></span>
                 </div>
 
                 <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">
-                    <?= $showMagicLinkForm ? 'Sign in with Email' : 'Start Exploring' ?>
+                    <?= $showMagicLinkForm ? h(__('login.sign_in_email')) : h(__('login.start_exploring')) ?>
                 </h1>
                 <p class="text-gray-400">
-                    <?= $showMagicLinkForm ? 'We\'ll send you a magic link' : 'Free forever. No credit card needed.' ?>
+                    <?= $showMagicLinkForm ? h(__('login.magic_link_info')) : h(__('login.free_forever')) ?>
                 </p>
             </div>
 
@@ -242,12 +244,24 @@ include APP_ROOT . '/components/header.php';
             </div>
             <?php endif; ?>
 
+            <?php if ($accountDeleted): ?>
+            <div class="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg mb-6">
+                <div class="flex items-start gap-3">
+                    <i data-lucide="shield-check" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <p class="font-medium"><?= h(__('login.account_deleted_title')) ?></p>
+                        <p class="text-sm mt-1 text-green-400/80"><?= h(__('login.account_deleted_message')) ?></p>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <?php if ($success): ?>
             <div class="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg mb-6">
                 <div class="flex items-start gap-3">
                     <i data-lucide="mail-check" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
                     <div>
-                        <p class="font-medium">Check your email!</p>
+                        <p class="font-medium"><?= h(__('login.check_email')) ?></p>
                         <p class="text-sm mt-1 text-green-400/80"><?= h($success) ?></p>
                     </div>
                 </div>
@@ -266,13 +280,13 @@ include APP_ROOT . '/components/header.php';
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                         </svg>
-                        <span>Continue with Google</span>
+                        <span><?= h(__('login.continue_google')) ?></span>
                     </a>
 
                     <!-- Trust Signal -->
                     <div class="flex items-center justify-center gap-2 text-sm text-gray-400">
                         <i data-lucide="shield-check" class="w-4 h-4 text-green-500 a11y-success-text"></i>
-                        <span>We never post without your permission</span>
+                        <span><?= h(__('login.trust_signal')) ?></span>
                     </div>
 
                     <!-- Magic Link Option - Temporarily disabled -->
@@ -282,7 +296,7 @@ include APP_ROOT . '/components/header.php';
                             <div class="w-full border-t border-white/10"></div>
                         </div>
                         <div class="relative flex justify-center text-sm">
-                            <span class="px-4 bg-brand-darker text-gray-400">or</span>
+                            <span class="px-4 bg-brand-darker text-gray-400"><?= h(__('login.or')) ?></span>
                         </div>
                     </div>
                     <a href="?method=email<?= $redirectUrl !== '/' ? '&redirect=' . urlencode($redirectUrl) : '' ?>"
@@ -294,8 +308,8 @@ include APP_ROOT . '/components/header.php';
                     <?php else: ?>
                     <div class="text-center py-8 text-gray-400">
                         <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto mb-4 text-yellow-500/50"></i>
-                        <p>Sign-in is temporarily unavailable.</p>
-                        <p class="text-sm mt-2 text-gray-400">Please try again later.</p>
+                        <p><?= h(__('login.google_unavailable')) ?></p>
+                        <p class="text-sm mt-2 text-gray-400"><?= h(__('login.google_config_note')) ?></p>
                     </div>
                     <?php endif; ?>
 
@@ -306,25 +320,25 @@ include APP_ROOT . '/components/header.php';
                         <input type="hidden" name="redirect" value="<?= h($redirectUrl) ?>">
 
                         <div>
-                            <label for="email" class="block text-sm font-medium text-gray-300 mb-2">Email address</label>
+                            <label for="email" class="block text-sm font-medium text-gray-300 mb-2"><?= h(__('login.email_label')) ?></label>
                             <div class="relative">
                                 <i data-lucide="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
                                 <input type="email"
                                        id="email"
                                        name="email"
                                        required
-                                       placeholder="you@example.com"
+                                       placeholder="<?= h(__('login.email_placeholder')) ?>"
                                        class="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow focus:border-transparent">
                             </div>
                         </div>
 
                         <button type="submit"
                                 class="w-full bg-brand-yellow hover:bg-yellow-300 text-brand-darker py-3.5 px-4 rounded-xl font-semibold transition-all hover:-translate-y-0.5 hover:shadow-lg">
-                            Send Magic Link
+                            <?= h(__('login.send_magic_link')) ?>
                         </button>
 
                         <p class="text-center text-sm text-gray-400">
-                            We'll email you a secure link to sign in instantly.
+                            <?= h(__('login.magic_link_note')) ?>
                         </p>
                     </form>
 
@@ -334,7 +348,7 @@ include APP_ROOT . '/components/header.php';
                             <div class="w-full border-t border-white/10"></div>
                         </div>
                         <div class="relative flex justify-center text-sm">
-                            <span class="px-4 bg-brand-darker text-gray-400">or</span>
+                            <span class="px-4 bg-brand-darker text-gray-400"><?= h(__('login.or')) ?></span>
                         </div>
                     </div>
 
@@ -346,7 +360,7 @@ include APP_ROOT . '/components/header.php';
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                         </svg>
-                        <span>Continue with Google instead</span>
+                        <span><?= h(__('login.continue_google_instead')) ?></span>
                     </a>
                 <?php endif; ?>
             </div>
@@ -355,27 +369,27 @@ include APP_ROOT . '/components/header.php';
 
             <!-- Mobile Feature Cards (visible only on mobile) -->
             <div class="lg:hidden mt-8 pt-8 border-t border-white/10">
-                <p class="text-center text-sm text-gray-400 mb-4">Join <?= h($userCountDisplay) ?>+ beach lovers who:</p>
+                <p class="text-center text-sm text-gray-400 mb-4"><?= h(__('login.join_who', ['count' => $userCountDisplay])) ?></p>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-white/5 rounded-xl p-4 text-center border border-white/10">
                         <span class="text-2xl mb-2 block">🌤️</span>
-                        <p class="text-white text-sm font-medium">Check Conditions</p>
-                        <p class="text-gray-400 text-xs mt-1">Real-time weather</p>
+                        <p class="text-white text-sm font-medium"><?= h(__('login.mobile_conditions')) ?></p>
+                        <p class="text-gray-400 text-xs mt-1"><?= h(__('login.mobile_conditions_desc')) ?></p>
                     </div>
                     <div class="bg-white/5 rounded-xl p-4 text-center border border-white/10">
                         <span class="text-2xl mb-2 block">❤️</span>
-                        <p class="text-white text-sm font-medium">Save Favorites</p>
-                        <p class="text-gray-400 text-xs mt-1">Never forget</p>
+                        <p class="text-white text-sm font-medium"><?= h(__('login.mobile_favorites')) ?></p>
+                        <p class="text-gray-400 text-xs mt-1"><?= h(__('login.mobile_favorites_desc')) ?></p>
                     </div>
                     <div class="bg-white/5 rounded-xl p-4 text-center border border-white/10">
                         <span class="text-2xl mb-2 block">🏆</span>
-                        <p class="text-white text-sm font-medium">Earn Badges</p>
-                        <p class="text-gray-400 text-xs mt-1">Track your journey</p>
+                        <p class="text-white text-sm font-medium"><?= h(__('login.mobile_badges')) ?></p>
+                        <p class="text-gray-400 text-xs mt-1"><?= h(__('login.mobile_badges_desc')) ?></p>
                     </div>
                     <div class="bg-white/5 rounded-xl p-4 text-center border border-white/10">
                         <span class="text-2xl mb-2 block">👥</span>
-                        <p class="text-white text-sm font-medium">Help Others</p>
-                        <p class="text-gray-400 text-xs mt-1">Share discoveries</p>
+                        <p class="text-white text-sm font-medium"><?= h(__('login.mobile_help')) ?></p>
+                        <p class="text-gray-400 text-xs mt-1"><?= h(__('login.mobile_help_desc')) ?></p>
                     </div>
                 </div>
             </div>
@@ -383,15 +397,15 @@ include APP_ROOT . '/components/header.php';
             <!-- Footer Links -->
             <div class="mt-8 pt-6 border-t border-white/10 text-center space-y-4">
                 <p class="text-xs text-gray-400">
-                    By signing in, you agree to our
-                    <a href="/terms" class="text-brand-yellow hover:underline">Terms of Service</a>
-                    and
-                    <a href="/privacy" class="text-brand-yellow hover:underline">Privacy Policy</a>
+                    <?= h(__('login.terms_agree')) ?>
+                    <a href="/terms" class="text-brand-yellow hover:underline"><?= h(__('login.terms_link')) ?></a>
+                    <?= h(__('login.terms_and')) ?>
+                    <a href="/privacy" class="text-brand-yellow hover:underline"><?= h(__('login.privacy_link')) ?></a>
                 </p>
 
                 <a href="/" class="inline-flex items-center gap-2 text-brand-yellow hover:text-yellow-300 text-sm transition-colors">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                    <span>Back to exploring beaches</span>
+                    <span><?= h(__('login.back_to_exploring')) ?></span>
                 </a>
             </div>
         </div>

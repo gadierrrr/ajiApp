@@ -24,6 +24,17 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/collection_query.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
+require_once APP_ROOT . '/inc/i18n.php';
+
+// Set language from explicit param, or Referer URL, or session/cookie fallback
+$langParam = isset($_GET['lang']) ? (string)$_GET['lang'] : '';
+if ($langParam === 'es') {
+    setLanguage('es');
+} elseif ($langParam === 'en') {
+    setLanguage('en');
+}
+// If no explicit lang param, getCurrentLanguage() will detect from Referer/session/cookie
 
 $isHtmxRequest = isset($_SERVER['HTTP_HX_REQUEST']);
 $format = isset($_GET['format']) ? (string)$_GET['format'] : ($isHtmxRequest ? 'html' : 'json');

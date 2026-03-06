@@ -11,21 +11,26 @@ require_once APP_ROOT . '/inc/session.php';
 require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
+require_once APP_ROOT . '/inc/i18n.php';
+require_once APP_ROOT . '/inc/referrals.php';
 require_once APP_ROOT . '/components/seo-schemas.php';
+
+$lang = getCurrentLanguage();
 
 // Get slug from URL (set by Nginx rewrite or query param)
 $slug = $_GET['slug'] ?? '';
 
 if (!$slug) {
     http_response_code(404);
-    $pageTitle = 'Beach Not Found';
+    $pageTitle = __('errors.beach_not_found');
     include APP_ROOT . '/components/header.php';
     echo '<div class="max-w-2xl mx-auto px-4 py-16 text-center">
             <div class="text-6xl mb-4">🏖️</div>
-            <h1 class="text-2xl font-bold text-gray-900 mb-4">Beach Not Found</h1>
-            <p class="text-gray-600 mb-6">The beach you\'re looking for doesn\'t exist or has been removed.</p>
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">' . h(__('errors.beach_not_found')) . '</h1>
+            <p class="text-gray-600 mb-6">' . h(__('errors.beach_not_found_message')) . '</p>
             <a href="/" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
-                Browse All Beaches
+                ' . h(__('errors.browse_all_beaches')) . '
             </a>
           </div>';
     include APP_ROOT . '/components/footer.php';
@@ -37,14 +42,14 @@ $beach = queryOne('SELECT * FROM beaches WHERE slug = :slug AND publish_status =
 
 if (!$beach) {
     http_response_code(404);
-    $pageTitle = 'Beach Not Found';
+    $pageTitle = __('errors.beach_not_found');
     include APP_ROOT . '/components/header.php';
     echo '<div class="max-w-2xl mx-auto px-4 py-16 text-center">
             <div class="text-6xl mb-4">🏖️</div>
-            <h1 class="text-2xl font-bold text-gray-900 mb-4">Beach Not Found</h1>
-            <p class="text-gray-600 mb-6">The beach you\'re looking for doesn\'t exist or has been removed.</p>
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">' . h(__('errors.beach_not_found')) . '</h1>
+            <p class="text-gray-600 mb-6">' . h(__('errors.beach_not_found_message')) . '</p>
             <a href="/" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium">
-                Browse All Beaches
+                ' . h(__('errors.browse_all_beaches')) . '
             </a>
           </div>';
     include APP_ROOT . '/components/footer.php';
@@ -65,17 +70,17 @@ $beach['gallery'] = array_column(
     'image_url'
 );
 $beach['features'] = query(
-    'SELECT title, description FROM beach_features WHERE beach_id = :id ORDER BY position',
+    'SELECT title, title_es, description, description_es FROM beach_features WHERE beach_id = :id ORDER BY position',
     [':id' => $beach['id']]
 );
 $beach['tips'] = query(
-    'SELECT category, tip FROM beach_tips WHERE beach_id = :id ORDER BY position',
+    'SELECT category, tip, tip_es FROM beach_tips WHERE beach_id = :id ORDER BY position',
     [':id' => $beach['id']]
 );
 
 // Get extended content sections
 $extendedSections = query("
-    SELECT section_type, heading, content, display_order
+    SELECT section_type, heading, heading_es, content, content_es, display_order
     FROM beach_content_sections
     WHERE beach_id = :id AND status = 'published'
     ORDER BY display_order ASC
@@ -97,12 +102,18 @@ $userReviewCount = count($reviews);
 $avgUserRating = $beach['avg_user_rating'] ?? null;
 
 // Page metadata
-$pageTitle = $beach['name'] . ' - ' . $beach['municipality'];
-$pageDescription = $beach['description']
-    ? (strlen($beach['description']) > 155
-        ? substr($beach['description'], 0, strrpos(substr($beach['description'], 0, 155), ' ') ?: 155) . '...'
-        : $beach['description'])
+$pageTitle = $beach['name'] . ' - ' . $beach['municipality'] . ' | ' . ($lang === 'es' ? 'Playas de Puerto Rico' : 'Puerto Rico Beach Finder');
+$_descSource = ($lang === 'es' && !empty($beach['description_es']))
+    ? $beach['description_es']
+    : ($beach['description'] ?? '');
+$_descFallback = $lang === 'es'
+    ? 'Descubre ' . $beach['name'] . ' en ' . $beach['municipality'] . ', Puerto Rico.'
     : 'Discover ' . $beach['name'] . ' in ' . $beach['municipality'] . ', Puerto Rico. View beach conditions, amenities, photos, and directions.';
+$pageDescription = $_descSource
+    ? (mb_strlen($_descSource) > 155
+        ? mb_substr($_descSource, 0, strrpos(mb_substr($_descSource, 0, 155), ' ') ?: 155) . '...'
+        : $_descSource)
+    : $_descFallback;
 
 // Generate structured data using SEO component (consolidated with reviews)
 $extraHead = beachSchema($beach, $reviews);
@@ -113,9 +124,9 @@ $extraHead .= touristAttractionSchema($beach);
 // Add breadcrumbs
 $municipalitySlug = strtolower(str_replace(' ', '-', $beach['municipality']));
 $extraHead .= breadcrumbSchema([
-    ['name' => 'Home', 'url' => '/'],
-    ['name' => $beach['municipality'], 'url' => '/beaches-in-' . $municipalitySlug],
-    ['name' => $beach['name'], 'url' => '/beach/' . $beach['slug']]
+    ['name' => __('nav.home'), 'url' => routeUrl('home', $lang)],
+    ['name' => $beach['municipality'], 'url' => routeUrl('municipality', $lang, ['municipality' => $municipalitySlug])],
+    ['name' => $beach['name'], 'url' => routeUrl('beach_detail', $lang, ['slug' => $beach['slug']])]
 ]);
 
 // Generate dynamic FAQ schema
@@ -130,6 +141,30 @@ $ogImage = $beach['cover_image'] ? absoluteUrl($beach['cover_image']) : null;
 
 // Get WebP version of cover image for optimized delivery
 $webpImage = getWebPImage($beach['cover_image'] ?? '');
+
+$referralLocale = $lang === 'es' ? 'es' : 'en';
+$referralBaseCtx = [
+    'page_type' => 'beach',
+    'page_slug' => (string) $beach['slug'],
+];
+$beachReferralHero = referralRenderBeachAnchor(
+    (string) $beach['id'],
+    'hero',
+    $referralLocale,
+    $referralBaseCtx
+);
+$beachReferralMid = referralRenderBeachAnchor(
+    (string) $beach['id'],
+    'mid_content',
+    $referralLocale,
+    $referralBaseCtx
+);
+$beachReferralBottom = referralRenderBeachAnchor(
+    (string) $beach['id'],
+    'bottom',
+    $referralLocale,
+    $referralBaseCtx
+);
 
 include APP_ROOT . '/components/header.php';
 ?>
@@ -157,11 +192,11 @@ include APP_ROOT . '/components/header.php';
         <div class="max-w-7xl mx-auto">
             <!-- Breadcrumbs -->
             <nav class="text-white/70 text-sm mb-4" aria-label="Breadcrumb">
-                <a href="/" class="hover:text-brand-yellow transition-colors">Home</a>
+                <a href="<?= h(routeUrl('home', $lang)) ?>" class="hover:text-brand-yellow transition-colors"><?= h(__('nav.home')) ?></a>
                 <span class="mx-2">/</span>
-                <a href="/" class="hover:text-brand-yellow transition-colors">Beaches</a>
+                <a href="<?= h(routeUrl('home', $lang)) ?>" class="hover:text-brand-yellow transition-colors"><?= h(__('nav.beaches')) ?></a>
                 <span class="mx-2">/</span>
-                <a href="/beaches-in-<?= h(strtolower(str_replace(' ', '-', $beach['municipality']))) ?>" class="hover:text-brand-yellow transition-colors"><?= h($beach['municipality']) ?></a>
+                <a href="<?= h(routeUrl('municipality', $lang, ['municipality' => strtolower(str_replace(' ', '-', $beach['municipality']))])) ?>" class="hover:text-brand-yellow transition-colors"><?= h($beach['municipality']) ?></a>
                 <span class="mx-2">/</span>
                 <span class="text-white/70"><?= h($beach['name']) ?></span>
             </nav>
@@ -222,15 +257,21 @@ include APP_ROOT . '/components/header.php';
                data-bf-source="beach_page"
                class="inline-flex items-center gap-1.5 bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-4 py-2 rounded-lg font-semibold text-sm transition-colors">
                 <i data-lucide="navigation" class="w-4 h-4" aria-hidden="true"></i>
-                <span>Directions</span>
+                <span><?= h(__('beach.directions')) ?></span>
             </a>
-            <button onclick="shareBeach('<?= h($beach['slug']) ?>', '<?= h(addslashes($beach['name'])) ?>')" aria-label="Share this beach"
+            <button data-action="shareBeach" data-action-args='["<?= h($beach['slug']) ?>","<?= h(addslashes($beach['name'])) ?>"]' aria-label="Share this beach"
                     class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm transition-colors">
                 <i data-lucide="share-2" class="w-4 h-4" aria-hidden="true"></i>
-                <span class="hidden sm:inline">Share</span>
+                <span class="hidden sm:inline"><?= h(__('beach.share')) ?></span>
             </button>
         </div>
     </div>
+
+    <?php if ($beachReferralHero !== ''): ?>
+    <div class="mb-6">
+        <?= $beachReferralHero ?>
+    </div>
+    <?php endif; ?>
 
     <?php
     // Pre-fetch data needed for sidebar (weather loaded client-side for fast TTFB)
@@ -247,30 +288,38 @@ include APP_ROOT . '/components/header.php';
         <!-- Left Column: Main Content -->
         <div class="lg:w-[63%] space-y-6">
 
+            <?php if ($beachReferralMid !== ''): ?>
+            <?= $beachReferralMid ?>
+            <?php endif; ?>
+
             <!-- Quick Facts - Condensed 2x2 Grid -->
             <section>
                 <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <i data-lucide="clipboard-list" class="w-5 h-5 text-brand-yellow" aria-hidden="true"></i>
-                    <span>Quick Facts</span>
+                    <span><?= h(__('beach.quick_facts')) ?></span>
                 </h2>
                 <div class="grid grid-cols-2 gap-3">
                     <?php if (!empty($beach['tags'])): ?>
-                    <?php $icon = 'activity'; $label = 'Best For'; $value = getTagLabel($beach['tags'][0]); $subtext = count($beach['tags']) > 1 ? '+' . (count($beach['tags']) - 1) . ' more' : ''; ?>
+                    <?php $icon = 'activity'; $label = __('beach.best_for'); $value = getTagLabel($beach['tags'][0]); $subtext = count($beach['tags']) > 1 ? __('beach.tags_more', ['count' => count($beach['tags']) - 1]) : ''; ?>
                     <?php include APP_ROOT . '/components/quick-fact-card.php'; ?>
                     <?php endif; ?>
 
                     <?php if ($beach['best_time']): ?>
-                    <?php $icon = 'clock'; $label = 'Best Time'; $value = $beach['best_time']; $subtext = ''; ?>
+                    <?php $icon = 'clock'; $label = __('beach.best_time'); $value = ($lang === 'es' && !empty($beach['best_time_es'])) ? $beach['best_time_es'] : $beach['best_time']; $subtext = ''; ?>
                     <?php include APP_ROOT . '/components/quick-fact-card.php'; ?>
                     <?php endif; ?>
 
                     <?php if ($beach['parking_details']): ?>
-                    <?php $icon = 'car'; $label = 'Parking'; $value = strlen($beach['parking_details']) > 20 ? substr($beach['parking_details'], 0, 20) . '...' : $beach['parking_details']; $subtext = ''; ?>
+                    <?php
+                    $icon = 'car'; $label = __('beach.parking');
+                    $_parkingVal = ($lang === 'es' && !empty($beach['parking_details_es'])) ? $beach['parking_details_es'] : $beach['parking_details'];
+                    $value = mb_strlen($_parkingVal) > 20 ? mb_substr($_parkingVal, 0, 20) . '...' : $_parkingVal; $subtext = '';
+                    ?>
                     <?php include APP_ROOT . '/components/quick-fact-card.php'; ?>
                     <?php endif; ?>
 
                     <?php if ($beach['access_label']): ?>
-                    <?php $icon = 'accessibility'; $label = 'Access'; $value = $beach['access_label']; $subtext = ''; ?>
+                    <?php $icon = 'accessibility'; $label = __('beach.access'); $value = $beach['access_label']; $subtext = ''; ?>
                     <?php include APP_ROOT . '/components/quick-fact-card.php'; ?>
                     <?php endif; ?>
                 </div>
@@ -278,9 +327,13 @@ include APP_ROOT . '/components/header.php';
 
             <!-- About + Highlights Merged -->
             <section>
-                <h2 class="text-xl font-bold text-white mb-3">About <?= h($beach['name']) ?></h2>
-                <?php if ($beach['description']): ?>
-                <p class="text-gray-300 leading-relaxed mb-4"><?= nl2br(h($beach['description'])) ?></p>
+                <h2 class="text-xl font-bold text-white mb-3"><?= h(__('beach.about')) ?> <?= h($beach['name']) ?></h2>
+                <?php
+                $_aboutDesc = ($lang === 'es' && !empty($beach['description_es']))
+                    ? $beach['description_es']
+                    : ($beach['description'] ?? '');
+                if ($_aboutDesc): ?>
+                <p class="text-gray-300 leading-relaxed mb-4"><?= nl2br(h($_aboutDesc)) ?></p>
                 <?php endif; ?>
 
                 <?php if (!empty($beach['features'])): ?>
@@ -288,7 +341,7 @@ include APP_ROOT . '/components/header.php';
                     <?php foreach ($beach['features'] as $feature): ?>
                     <span class="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 text-white/80 px-3 py-1.5 rounded-lg text-sm">
                         <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-yellow" aria-hidden="true"></i>
-                        <?= h($feature['title']) ?>
+                        <?= h(($lang === 'es' && !empty($feature['title_es'])) ? $feature['title_es'] : $feature['title']) ?>
                     </span>
                     <?php endforeach; ?>
                 </div>
@@ -300,13 +353,13 @@ include APP_ROOT . '/components/header.php';
             <section>
                 <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <i data-lucide="lightbulb" class="w-5 h-5 text-brand-yellow" aria-hidden="true"></i>
-                    <span>Visitor Tips</span>
+                    <span><?= h(__('beach.visitor_tips')) ?></span>
                 </h2>
                 <ul class="space-y-2">
                     <?php foreach ($beach['tips'] as $tip): ?>
                     <li class="flex items-start gap-2 text-sm">
                         <span class="yellow-bullet mt-1.5 flex-shrink-0"></span>
-                        <span class="text-gray-300"><?= h($tip['tip']) ?></span>
+                        <span class="text-gray-300"><?= h(($lang === 'es' && !empty($tip['tip_es'])) ? $tip['tip_es'] : $tip['tip']) ?></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>
@@ -317,13 +370,19 @@ include APP_ROOT . '/components/header.php';
             <?php if (!empty($extendedSections)): ?>
             <div class="extended-content space-y-6 mt-8">
                 <?php foreach ($extendedSections as $section): ?>
+                    <?php
+                    $_sectionHeading = ($lang === 'es' && !empty($section['heading_es']))
+                        ? $section['heading_es'] : $section['heading'];
+                    $_sectionContent = ($lang === 'es' && !empty($section['content_es']))
+                        ? $section['content_es'] : $section['content'];
+                    ?>
                     <section class="beach-detail-card p-6 rounded-xl" id="section-<?= h($section['section_type']) ?>">
                         <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <i data-lucide="<?= h(CONTENT_SECTIONS[$section['section_type']]['icon'] ?? 'info') ?>" class="w-5 h-5 text-brand-yellow"></i>
-                            <?= h($section['heading']) ?>
+                            <?= h($_sectionHeading) ?>
                         </h2>
                         <div class="prose prose-invert prose-brand max-w-none">
-                            <?= $section['content'] ?>
+                            <?= sanitizeContentHtml($_sectionContent) ?>
                         </div>
                     </section>
                 <?php endforeach; ?>
@@ -335,13 +394,13 @@ include APP_ROOT . '/components/header.php';
             <section>
                 <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <i data-lucide="images" class="w-5 h-5 text-brand-yellow" aria-hidden="true"></i>
-                    Photos
+                    <?= h(__('beach.photos')) ?>
                 </h2>
                 <div class="gallery-grid">
                     <?php foreach ($beach['gallery'] as $idx => $image): ?>
-                    <img src="<?= h($image) ?>" alt="<?= h($beach['name']) ?> - Photo <?= $idx + 1 ?>"
+                    <img src="<?= h($image) ?>" alt="<?= h($beach['name']) ?> - <?= h(__('beach.photo_label')) ?> <?= $idx + 1 ?>"
                          class="rounded-lg cursor-pointer hover:opacity-90 transition-opacity gallery-image"
-                         data-gallery-index="<?= $idx ?>" onclick="openLightbox(<?= $idx ?>)" loading="lazy">
+                         data-gallery-index="<?= $idx ?>" data-action="openLightbox" data-action-args='[<?= $idx ?>]' loading="lazy">
                     <?php endforeach; ?>
                 </div>
             </section>
@@ -356,33 +415,33 @@ include APP_ROOT . '/components/header.php';
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-lg font-bold text-white flex items-center gap-2">
                         <i data-lucide="camera" class="w-5 h-5 text-purple-400" aria-hidden="true"></i>
-                        <span>Visitor Photos</span>
+                        <span><?= h(__('beach.visitor_photos')) ?></span>
                         <?php if ($totalUserPhotos['count'] > 0): ?>
                         <span class="text-sm font-normal text-gray-400">(<?= $totalUserPhotos['count'] ?>)</span>
                         <?php endif; ?>
                     </h2>
                     <?php if (isAuthenticated()): ?>
-                    <button onclick="openPhotoUploadModal('<?= h($beach['id']) ?>', '<?= h(addslashes($beach['name'])) ?>')"
+                    <button data-action="openPhotoUploadModal" data-action-args='["<?= h($beach['id']) ?>","<?= h(addslashes($beach['name'])) ?>"]'
                             class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 text-sm">
                         <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span>Add</span>
+                        <span><?= __('beach.add_photo') ?></span>
                     </button>
                     <?php else: ?>
-                    <a href="/login?redirect=<?= urlencode('/beach/' . $beach['slug'] . '#user-photos') ?>"
-                       class="text-sm text-purple-400 hover:text-purple-300 font-medium">Sign in to add</a>
+                    <a href="<?= h(routeUrl('login', $lang)) ?>?redirect=<?= urlencode(routeUrl('beach_detail', $lang, ['slug' => $beach['slug']]) . '#user-photos') ?>"
+                       class="text-sm text-purple-400 hover:text-purple-300 font-medium"><?= h(__('beach.sign_in_to_add')) ?></a>
                     <?php endif; ?>
                 </div>
                 <?php if (!empty($userPhotos)): ?>
                 <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                     <?php foreach ($userPhotos as $photo): ?>
-                    <button onclick="openPhotoModal('/uploads/photos/<?= h($photo['filename']) ?>', '<?= h(addslashes($photo['caption'] ?? '')) ?>')"
+                    <button data-action="openPhotoModal" data-action-args='["/uploads/photos/<?= h($photo['filename']) ?>","<?= h(addslashes($photo['caption'] ?? '')) ?>"]'
                             class="aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity">
                         <img src="/uploads/photos/thumbs/<?= h($photo['filename']) ?>" alt="<?= h($photo['caption'] ?? 'Visitor photo') ?>" class="w-full h-full object-cover" loading="lazy">
                     </button>
                     <?php endforeach; ?>
                 </div>
                 <?php else: ?>
-                <p class="text-sm text-gray-400">No photos yet. Be the first to share!</p>
+                <p class="text-sm text-gray-400"><?= h(__('beach.no_photos_yet')) ?></p>
                 <?php endif; ?>
             </section>
 
@@ -390,7 +449,7 @@ include APP_ROOT . '/components/header.php';
             <section id="reviews">
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-3">
-                        <h2 class="text-lg font-bold text-white">Reviews</h2>
+                        <h2 class="text-lg font-bold text-white"><?= h(__('beach.reviews_title')) ?></h2>
                         <?php if ($avgUserRating): ?>
                         <div class="flex items-center gap-1 text-sm">
                             <span class="text-brand-yellow">★</span>
@@ -400,13 +459,13 @@ include APP_ROOT . '/components/header.php';
                         <?php endif; ?>
                     </div>
                     <?php if (isAuthenticated()): ?>
-                    <button onclick="openReviewForm('<?= h($beach['id']) ?>', '<?= h(addslashes($beach['name'])) ?>')"
+                    <button data-action="openReviewForm" data-action-args='["<?= h($beach['id']) ?>","<?= h(addslashes($beach['name'])) ?>"]'
                             class="bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-3 py-1.5 rounded-lg font-medium text-sm transition-colors">
-                        Write Review
+                        <?= h(__('beach.write_review')) ?>
                     </button>
                     <?php else: ?>
-                    <a href="/login?redirect=<?= urlencode('/beach/' . $beach['slug'] . '#reviews') ?>"
-                       class="text-sm text-brand-yellow hover:text-yellow-300 font-medium">Sign in to review</a>
+                    <a href="<?= h(routeUrl('login', $lang)) ?>?redirect=<?= urlencode(routeUrl('beach_detail', $lang, ['slug' => $beach['slug']]) . '#reviews') ?>"
+                       class="text-sm text-brand-yellow hover:text-yellow-300 font-medium"><?= h(__('beach.sign_in_to_review')) ?></a>
                     <?php endif; ?>
                 </div>
                 <?php if (!empty($reviews)): ?>
@@ -416,7 +475,7 @@ include APP_ROOT . '/components/header.php';
                     <?php endforeach; ?>
                 </div>
                 <?php else: ?>
-                <p class="text-sm text-gray-400">No reviews yet. Be the first to share your experience!</p>
+                <p class="text-sm text-gray-400"><?= h(__('beach.no_reviews_yet')) ?></p>
                 <?php endif; ?>
             </section>
 
@@ -446,7 +505,7 @@ include APP_ROOT . '/components/header.php';
                 <?php if ($beach['sargassum'] || $beach['surf'] || $beach['wind']): ?>
                 <div class="beach-detail-card p-4">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-white text-sm">Conditions</h3>
+                        <h3 class="font-bold text-white text-sm"><?= h(__('beach.conditions')) ?></h3>
                         <?php if ($beach['updated_at']): ?>
                         <span class="text-xs text-gray-400"><?= h(timeAgo($beach['updated_at'])) ?></span>
                         <?php endif; ?>
@@ -455,7 +514,7 @@ include APP_ROOT . '/components/header.php';
                         <?php if ($beach['sargassum']): ?>
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-400 inline-flex items-center gap-1.5">
-                                <i data-lucide="leaf" class="w-3.5 h-3.5" aria-hidden="true"></i>Sargassum
+                                <i data-lucide="leaf" class="w-3.5 h-3.5" aria-hidden="true"></i><?= __('beach.condition_sargassum') ?>
                             </span>
                             <span class="<?= getConditionClass($beach['sargassum'], 'sargassum') ?> px-2 py-0.5 rounded text-xs">
                                 <?= h(getConditionLabel('sargassum', $beach['sargassum'])) ?>
@@ -465,7 +524,7 @@ include APP_ROOT . '/components/header.php';
                         <?php if ($beach['surf']): ?>
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-400 inline-flex items-center gap-1.5">
-                                <i data-lucide="waves" class="w-3.5 h-3.5" aria-hidden="true"></i>Surf
+                                <i data-lucide="waves" class="w-3.5 h-3.5" aria-hidden="true"></i><?= __('beach.condition_surf') ?>
                             </span>
                             <span class="<?= getConditionClass($beach['surf'], 'surf') ?> px-2 py-0.5 rounded text-xs">
                                 <?= h(getConditionLabel('surf', $beach['surf'])) ?>
@@ -475,7 +534,7 @@ include APP_ROOT . '/components/header.php';
                         <?php if ($beach['wind']): ?>
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-400 inline-flex items-center gap-1.5">
-                                <i data-lucide="wind" class="w-3.5 h-3.5" aria-hidden="true"></i>Wind
+                                <i data-lucide="wind" class="w-3.5 h-3.5" aria-hidden="true"></i><?= __('beach.condition_wind') ?>
                             </span>
                             <span class="<?= getConditionClass($beach['wind'], 'wind') ?> px-2 py-0.5 rounded text-xs">
                                 <?= h(getConditionLabel('wind', $beach['wind'])) ?>
@@ -491,11 +550,11 @@ include APP_ROOT . '/components/header.php';
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-bold text-white text-sm flex items-center gap-1.5">
                             <i data-lucide="radio" class="w-3.5 h-3.5 text-green-400" aria-hidden="true"></i>
-                            Live Updates
+                            <?= h(__('beach.live_updates')) ?>
                         </h3>
-                        <button onclick="openCheckinModal('<?= h($beach['id']) ?>', '<?= h(addslashes($beach['name'])) ?>')"
+                        <button data-action="openCheckinModal" data-action-args='["<?= h($beach['id']) ?>","<?= h(addslashes($beach['name'])) ?>"]'
                                 class="text-xs <?= isAuthenticated() ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white/10 hover:bg-white/20 text-white' ?> px-2 py-1 rounded font-medium transition-colors border border-white/10">
-                            Check In
+                            <?= h(__('beach.check_in')) ?>
                         </button>
                     </div>
                     <?php if ($crowdLevel): ?>
@@ -517,7 +576,7 @@ include APP_ROOT . '/components/header.php';
                         </div>
                     </div>
                     <?php else: ?>
-                    <p class="text-xs text-gray-400 text-center py-2">No recent crowd data</p>
+                    <p class="text-xs text-gray-400 text-center py-2"><?= h(__('beach.no_crowd_data')) ?></p>
                     <?php endif; ?>
                 </div>
 
@@ -541,7 +600,7 @@ include APP_ROOT . '/components/header.php';
                            data-bf-municipality="<?= h($beach['municipality']) ?>"
                            data-bf-source="beach_page_map"
                            class="mt-2 block w-full text-center bg-brand-yellow hover:bg-yellow-300 text-brand-darker py-2 rounded-lg font-medium text-sm transition-colors">
-                            Get Directions
+                            <?= h(__('beach.get_directions')) ?>
                         </a>
                     </div>
                 </div>
@@ -549,7 +608,7 @@ include APP_ROOT . '/components/header.php';
                 <!-- Amenities -->
                 <?php if (!empty($beach['amenities'])): ?>
                 <div class="beach-detail-card p-4">
-                    <h3 class="font-bold text-white text-sm mb-3">Amenities</h3>
+                    <h3 class="font-bold text-white text-sm mb-3"><?= h(__('beach.amenities_title')) ?></h3>
                     <div class="flex flex-wrap gap-1.5">
                         <?php foreach ($beach['amenities'] as $amenity): ?>
                         <span class="inline-flex items-center gap-1 text-xs bg-white/5 text-gray-300 px-2 py-1 rounded">
@@ -563,11 +622,11 @@ include APP_ROOT . '/components/header.php';
 
                 <!-- Practical Info -->
                 <div class="beach-detail-card p-4 space-y-3">
-                    <h3 class="font-bold text-white text-sm">Practical Info</h3>
+                    <h3 class="font-bold text-white text-sm"><?= h(__('beach.practical_info')) ?></h3>
                     <?php if ($beach['safety_info']): ?>
                     <div class="text-sm">
-                        <span class="text-amber-400 inline-flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Safety</span>
-                        <p class="text-gray-400 text-xs mt-0.5"><?= h($beach['safety_info']) ?></p>
+                        <span class="text-amber-400 inline-flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> <?= h(__('beach.safety')) ?></span>
+                        <p class="text-gray-400 text-xs mt-0.5"><?= h(($lang === 'es' && !empty($beach['safety_info_es'])) ? $beach['safety_info_es'] : $beach['safety_info']) ?></p>
                     </div>
                     <?php endif; ?>
                     <?php if ($sunTimes): ?>
@@ -583,6 +642,12 @@ include APP_ROOT . '/components/header.php';
 
     </div><!-- End Two-Column Layout -->
 
+    <?php if ($beachReferralBottom !== ''): ?>
+    <section class="mt-8">
+        <?= $beachReferralBottom ?>
+    </section>
+    <?php endif; ?>
+
     <!-- Related Planning Guides -->
     <?php
     $relatedGuides = getRelatedGuides($beach['tags'], 3);
@@ -591,7 +656,7 @@ include APP_ROOT . '/components/header.php';
     <section class="mt-8 pt-6 border-t border-white/10">
         <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <i data-lucide="book-open" class="w-5 h-5 text-brand-yellow" aria-hidden="true"></i>
-            Planning Your Visit
+            <?= h(__('beach.planning_visit')) ?>
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <?php foreach ($relatedGuides as $guide): ?>
@@ -604,7 +669,7 @@ include APP_ROOT . '/components/header.php';
                         <h3 class="font-semibold text-white text-sm mb-1 group-hover:text-brand-yellow transition-colors">
                             <?= h($guide['title']) ?>
                         </h3>
-                        <p class="text-xs text-gray-400">Essential tips & information</p>
+                        <p class="text-xs text-gray-400"><?= h(__('beach.essential_tips')) ?></p>
                     </div>
                     <i data-lucide="arrow-right" class="w-4 h-4 text-gray-500 group-hover:text-brand-yellow transition-colors flex-shrink-0" aria-hidden="true"></i>
                 </div>
@@ -622,11 +687,11 @@ include APP_ROOT . '/components/header.php';
     <section class="mt-8 pt-6 border-t border-white/10">
         <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <i data-lucide="sparkles" class="w-5 h-5 text-brand-yellow" aria-hidden="true"></i>
-            Similar Beaches
+            <?= h(__('beach.similar_beaches')) ?>
         </h2>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <?php foreach ($similarBeaches as $similar): ?>
-            <a href="/beach/<?= h($similar['slug']) ?>" class="group beach-detail-card overflow-hidden hover:border-brand-yellow/30 transition-all">
+            <a href="<?= h(routeUrl('beach_detail', $lang, ['slug' => $similar['slug']])) ?>" class="group beach-detail-card overflow-hidden hover:border-brand-yellow/30 transition-all">
                 <div class="aspect-video relative overflow-hidden">
                     <img src="<?= h(getThumbnailUrl($similar['cover_image'])) ?>" alt="<?= h($similar['name']) ?>"
                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
@@ -675,36 +740,36 @@ if (isAuthenticated()) {
        class="sticky-directions"
        aria-label="Get directions">
         <i data-lucide="navigation" class="w-4 h-4" aria-hidden="true"></i>
-        <span>Directions</span>
+        <span><?= h(__('beach.directions')) ?></span>
     </a>
 
     <button type="button"
             class="sticky-directions"
             style="background: rgba(255,255,255,0.10); color: white;"
-            onclick="toggleStickyFavorite()"
+            data-action="toggleStickyFavorite"
             aria-label="<?= $isFavorite ? 'Remove from favorites' : 'Add to favorites' ?>"
             aria-pressed="<?= $isFavorite ? 'true' : 'false' ?>"
             id="sticky-favorite-btn">
         <span id="sticky-favorite-icon" aria-hidden="true"><?= $isFavorite ? '❤️' : '🤍' ?></span>
-        <span>Save</span>
+        <span><?= h(__('beach.save')) ?></span>
     </button>
 
     <button type="button"
             class="sticky-directions"
             style="background: rgba(255,255,255,0.10); color: white;"
-            onclick="shareBeach('<?= h($beach['slug']) ?>', '<?= h(addslashes($beach['name'])) ?>')"
-            aria-label="Share">
+            data-action="shareBeach" data-action-args='["<?= h($beach['slug']) ?>","<?= h(addslashes($beach['name'])) ?>"]'
+            aria-label="<?= h(__('beach.share')) ?>">
         <i data-lucide="share-2" class="w-4 h-4" aria-hidden="true"></i>
-        <span>Share</span>
+        <span><?= h(__('beach.share')) ?></span>
     </button>
 </div>
 
 <!-- Share Modal -->
-<div id="share-modal" class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title" onclick="closeShareModal()">
-    <div class="share-modal-content" onclick="event.stopPropagation()">
+<div id="share-modal" class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title" data-action="closeShareModal">
+    <div class="share-modal-content" data-action-stop data-action="noop" data-on="click">
         <div class="flex justify-between items-center mb-4">
-            <h3 id="share-modal-title" class="text-lg font-semibold">Share Beach</h3>
-            <button onclick="closeShareModal()" class="text-gray-400 hover:text-gray-600" aria-label="Close share dialog">
+            <h3 id="share-modal-title" class="text-lg font-semibold"><?= h(__('beach.share_beach')) ?></h3>
+            <button data-action="closeShareModal" class="text-gray-400 hover:text-gray-600" aria-label="Close share dialog">
                 <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
             </button>
         </div>
@@ -712,7 +777,7 @@ if (isAuthenticated()) {
     </div>
 </div>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 // Initialize small map for sidebar
 document.addEventListener('DOMContentLoaded', () => {
     const mapContainer = document.getElementById('beach-map');
@@ -732,7 +797,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 async function toggleStickyFavorite() {
     const btn = document.getElementById('sticky-favorite-btn');
     const icon = document.getElementById('sticky-favorite-icon');
@@ -767,13 +832,13 @@ async function toggleStickyFavorite() {
         btn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
         icon.textContent = isFav ? '❤️' : '🤍';
         if (typeof showToast === 'function') {
-            showToast(isFav ? 'Saved!' : 'Removed from favorites', isFav ? 'success' : 'info', 2500);
+            showToast(isFav ? '<?= __('beach.saved_toast') ?>' : '<?= __('beach.removed_toast') ?>', isFav ? 'success' : 'info', 2500);
         }
         if (typeof window.bfTrack === 'function') {
             window.bfTrack(isFav ? 'favorite_add' : 'favorite_remove', { source: 'beach_page_sticky', beach_slug: <?= json_encode($beach['slug']) ?> });
         }
     } catch (e) {
-        if (typeof showToast === 'function') showToast('Could not update favorite.', 'error', 3500);
+        if (typeof showToast === 'function') showToast('<?= __('beach.favorite_error') ?>', 'error', 3500);
     } finally {
         delete btn.dataset.loading;
     }
@@ -782,15 +847,15 @@ async function toggleStickyFavorite() {
 
 <?php if (!empty($beach['gallery'])): ?>
 <!-- Gallery Lightbox -->
-<div id="gallery-lightbox" class="lightbox-overlay" onclick="closeLightbox(event)" role="dialog" aria-modal="true" aria-label="Image gallery">
-    <div class="lightbox-container" onclick="event.stopPropagation()">
+<div id="gallery-lightbox" class="lightbox-overlay" data-action="closeLightbox" data-action-args='["__event__"]' role="dialog" aria-modal="true" aria-label="Image gallery">
+    <div class="lightbox-container" data-action-stop data-action="noop" data-on="click">
         <!-- Close button -->
-        <button onclick="closeLightbox()" class="lightbox-close" aria-label="Close gallery">
+        <button data-action="closeLightbox" class="lightbox-close" aria-label="Close gallery">
             <i data-lucide="x" class="w-6 h-6"></i>
         </button>
 
         <!-- Previous button -->
-        <button onclick="navigateLightbox(-1)" class="lightbox-nav lightbox-prev" aria-label="Previous image">
+        <button data-action="navigateLightbox" data-action-args='[-1]' class="lightbox-nav lightbox-prev" aria-label="Previous image">
             <i data-lucide="chevron-left" class="w-8 h-8"></i>
         </button>
 
@@ -801,13 +866,13 @@ async function toggleStickyFavorite() {
         </div>
 
         <!-- Next button -->
-        <button onclick="navigateLightbox(1)" class="lightbox-nav lightbox-next" aria-label="Next image">
+        <button data-action="navigateLightbox" data-action-args='[1]' class="lightbox-nav lightbox-next" aria-label="Next image">
             <i data-lucide="chevron-right" class="w-8 h-8"></i>
         </button>
     </div>
 </div>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 // Gallery Lightbox
 const galleryImages = <?= json_encode($beach['gallery']) ?>;
 let currentImageIndex = 0;
@@ -841,7 +906,7 @@ function updateLightboxImage() {
     const img = document.getElementById('lightbox-image');
     const counter = document.getElementById('lightbox-counter');
     img.src = galleryImages[currentImageIndex];
-    img.alt = '<?= h($beach['name']) ?> - Photo ' + (currentImageIndex + 1);
+    img.alt = '<?= h($beach['name']) ?> - <?= h(__('beach.photo_label')) ?> ' + (currentImageIndex + 1);
     counter.textContent = (currentImageIndex + 1) + ' / ' + galleryImages.length;
 }
 
@@ -881,65 +946,65 @@ function handleSwipe() {
 
 <!-- Report Outdated Info Modal -->
 <div id="report-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"
-     role="dialog" aria-modal="true" aria-labelledby="report-modal-title" onclick="closeReportModal()">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full" onclick="event.stopPropagation()">
+     role="dialog" aria-modal="true" aria-labelledby="report-modal-title" data-action="closeReportModal">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full" data-action-stop data-action="noop" data-on="click">
         <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h2 id="report-modal-title" class="text-lg font-semibold text-gray-900">Report Outdated Info</h2>
-            <button onclick="closeReportModal()" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
+            <h2 id="report-modal-title" class="text-lg font-semibold text-gray-900"><?= __('beach.report_modal_title') ?></h2>
+            <button data-action="closeReportModal" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
-        <form id="report-form" class="p-6 space-y-4" onsubmit="submitReport(event)">
+        <form id="report-form" class="p-6 space-y-4" data-action="submitReport" data-action-args='["__event__"]' data-on="submit">
             <input type="hidden" name="beach_id" id="report-beach-id">
             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
             <p class="text-sm text-gray-600">
-                Help us keep beach information accurate! Let us know what's changed at <strong id="report-beach-name"></strong>.
+                <?= __('beach.report_help_text', ['name' => '<strong id="report-beach-name">' . h($beach['name']) . '</strong>']) ?>
             </p>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">What needs updating?</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('beach.report_what_updating') ?></label>
                 <div class="space-y-2">
                     <label class="flex items-center gap-2">
                         <input type="checkbox" name="issues[]" value="conditions" class="rounded border-gray-300">
-                        <span class="text-sm text-gray-700">Beach conditions (sargassum, surf, wind)</span>
+                        <span class="text-sm text-gray-700"><?= __('beach.report_opt_conditions') ?></span>
                     </label>
                     <label class="flex items-center gap-2">
                         <input type="checkbox" name="issues[]" value="amenities" class="rounded border-gray-300">
-                        <span class="text-sm text-gray-700">Amenities (parking, restrooms, etc.)</span>
+                        <span class="text-sm text-gray-700"><?= __('beach.report_opt_amenities') ?></span>
                     </label>
                     <label class="flex items-center gap-2">
                         <input type="checkbox" name="issues[]" value="access" class="rounded border-gray-300">
-                        <span class="text-sm text-gray-700">Access or directions</span>
+                        <span class="text-sm text-gray-700"><?= __('beach.report_opt_access') ?></span>
                     </label>
                     <label class="flex items-center gap-2">
                         <input type="checkbox" name="issues[]" value="safety" class="rounded border-gray-300">
-                        <span class="text-sm text-gray-700">Safety information</span>
+                        <span class="text-sm text-gray-700"><?= __('beach.report_opt_safety') ?></span>
                     </label>
                     <label class="flex items-center gap-2">
                         <input type="checkbox" name="issues[]" value="other" class="rounded border-gray-300">
-                        <span class="text-sm text-gray-700">Other</span>
+                        <span class="text-sm text-gray-700"><?= __('beach.report_opt_other') ?></span>
                     </label>
                 </div>
             </div>
 
             <div>
                 <label for="report-details" class="block text-sm font-medium text-gray-700 mb-1">
-                    Details <span class="text-gray-400">(optional)</span>
+                    <?= __('beach.report_details') ?> <span class="text-gray-400"><?= __('beach.optional') ?></span>
                 </label>
                 <textarea name="details" id="report-details" rows="3" maxlength="500"
-                          placeholder="Tell us what's different from what's shown..."
+                          placeholder="<?= h(__('beach.report_placeholder')) ?>"
                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm"></textarea>
             </div>
 
             <div class="flex gap-3 pt-2">
                 <button type="submit" id="report-submit-btn"
                         class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-colors text-sm">
-                    Submit Report
+                    <?= __('beach.report_submit') ?>
                 </button>
-                <button type="button" onclick="closeReportModal()"
+                <button type="button" data-action="closeReportModal"
                         class="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
-                    Cancel
+                    <?= __('beach.report_cancel') ?>
                 </button>
             </div>
 
@@ -948,7 +1013,7 @@ function handleSwipe() {
     </div>
 </div>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 function openReportModal(beachId, beachName) {
     document.getElementById('report-beach-id').value = beachId;
     document.getElementById('report-beach-name').textContent = beachName || 'this beach';
@@ -980,31 +1045,31 @@ async function submitReport(event) {
     // Check if at least one issue is selected
     const checkboxes = form.querySelectorAll('input[name="issues[]"]:checked');
     if (checkboxes.length === 0) {
-        messageDiv.textContent = 'Please select at least one issue to report.';
+        messageDiv.textContent = '<?= __('beach.report_select_issue') ?>';
         messageDiv.className = 'bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg';
         messageDiv.classList.remove('hidden');
         return;
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
+    submitBtn.textContent = '<?= __('beach.report_submitting') ?>';
     messageDiv.classList.add('hidden');
 
     // For now, just show success (you can implement the API endpoint later)
     setTimeout(() => {
-        messageDiv.textContent = 'Thank you! Your report has been submitted and will be reviewed soon.';
+        messageDiv.textContent = '<?= __('beach.report_success') ?>';
         messageDiv.className = 'bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg';
         messageDiv.classList.remove('hidden');
 
         // Show toast and close after delay
         if (typeof showToast === 'function') {
-            showToast('Report submitted. Thank you!', 'success', 3000);
+            showToast('<?= __('beach.report_toast_success') ?>', 'success', 3000);
         }
 
         setTimeout(() => {
             closeReportModal();
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit Report';
+            submitBtn.textContent = '<?= __('beach.report_submit') ?>';
         }, 1500);
     }, 500);
 }
@@ -1017,64 +1082,64 @@ document.addEventListener('keydown', (e) => {
 
 <!-- Check-In Modal -->
 <div id="checkin-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"
-     role="dialog" aria-modal="true" aria-labelledby="checkin-modal-title" onclick="closeCheckinModal()">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+     role="dialog" aria-modal="true" aria-labelledby="checkin-modal-title" data-action="closeCheckinModal">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" data-action-stop data-action="noop" data-on="click">
         <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
             <h2 id="checkin-modal-title" class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <i data-lucide="map-pin" class="w-5 h-5 text-green-600" aria-hidden="true"></i>
-                <span>Check In</span>
+                <span><?= __('beach.checkin_modal_title') ?></span>
             </h2>
-            <button onclick="closeCheckinModal()" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
+            <button data-action="closeCheckinModal" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <form id="checkin-form" class="p-6 space-y-5" onsubmit="submitCheckin(event)">
+        <form id="checkin-form" class="p-6 space-y-5" data-action="submitCheckin" data-action-args='["__event__"]' data-on="submit">
             <input type="hidden" name="beach_id" id="checkin-beach-id">
             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
             <input type="hidden" name="website" value="" autocomplete="off">
 
             <p class="text-sm text-gray-600">
-                Share what you're seeing at <strong id="checkin-beach-name"></strong> right now!
+                <?= __('beach.checkin_share_text', ['name' => '<strong id="checkin-beach-name">' . h($beach['name']) . '</strong>']) ?>
             </p>
 
             <!-- Crowd Level -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">How crowded is it?</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('beach.checkin_crowded') ?></label>
                 <div class="grid grid-cols-5 gap-2">
                     <label class="checkin-option">
                         <input type="radio" name="crowd_level" value="empty" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🏝️</span>
-                            <span class="text-xs">Empty</span>
+                            <span class="text-xs"><?= __('beach.checkin_empty') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="crowd_level" value="light" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">👥</span>
-                            <span class="text-xs">Light</span>
+                            <span class="text-xs"><?= __('beach.checkin_light') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="crowd_level" value="moderate" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">👥👥</span>
-                            <span class="text-xs">Moderate</span>
+                            <span class="text-xs"><?= __('beach.checkin_moderate') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="crowd_level" value="busy" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">👥👥👥</span>
-                            <span class="text-xs">Busy</span>
+                            <span class="text-xs"><?= __('beach.checkin_busy') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="crowd_level" value="packed" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🔥</span>
-                            <span class="text-xs">Packed</span>
+                            <span class="text-xs"><?= __('beach.checkin_packed') ?></span>
                         </div>
                     </label>
                 </div>
@@ -1082,34 +1147,34 @@ document.addEventListener('keydown', (e) => {
 
             <!-- Parking Status -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Parking availability?</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('beach.checkin_parking') ?></label>
                 <div class="grid grid-cols-4 gap-2">
                     <label class="checkin-option">
                         <input type="radio" name="parking_status" value="plenty" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🅿️</span>
-                            <span class="text-xs">Plenty</span>
+                            <span class="text-xs"><?= __('beach.checkin_plenty') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="parking_status" value="available" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">✓</span>
-                            <span class="text-xs">Available</span>
+                            <span class="text-xs"><?= __('beach.checkin_available') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="parking_status" value="limited" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">⚠️</span>
-                            <span class="text-xs">Limited</span>
+                            <span class="text-xs"><?= __('beach.checkin_limited') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="parking_status" value="full" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🚫</span>
-                            <span class="text-xs">Full</span>
+                            <span class="text-xs"><?= __('beach.checkin_full') ?></span>
                         </div>
                     </label>
                 </div>
@@ -1117,34 +1182,34 @@ document.addEventListener('keydown', (e) => {
 
             <!-- Water Conditions -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Water conditions?</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('beach.checkin_water') ?></label>
                 <div class="grid grid-cols-4 gap-2">
                     <label class="checkin-option">
                         <input type="radio" name="water_condition" value="calm" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">😌</span>
-                            <span class="text-xs">Calm</span>
+                            <span class="text-xs"><?= __('beach.checkin_calm') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="water_condition" value="small-waves" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🌊</span>
-                            <span class="text-xs">Small</span>
+                            <span class="text-xs"><?= __('beach.checkin_small_waves') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="water_condition" value="choppy" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🌊🌊</span>
-                            <span class="text-xs">Choppy</span>
+                            <span class="text-xs"><?= __('beach.checkin_choppy') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="water_condition" value="rough" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">⚠️</span>
-                            <span class="text-xs">Rough</span>
+                            <span class="text-xs"><?= __('beach.checkin_rough') ?></span>
                         </div>
                     </label>
                 </div>
@@ -1152,34 +1217,34 @@ document.addEventListener('keydown', (e) => {
 
             <!-- Sargassum -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Sargassum level?</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('beach.checkin_sargassum') ?></label>
                 <div class="grid grid-cols-4 gap-2">
                     <label class="checkin-option">
                         <input type="radio" name="sargassum_level" value="none" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">✨</span>
-                            <span class="text-xs">None</span>
+                            <span class="text-xs"><?= __('beach.checkin_none') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="sargassum_level" value="light" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🌿</span>
-                            <span class="text-xs">Light</span>
+                            <span class="text-xs"><?= __('beach.checkin_light') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="sargassum_level" value="moderate" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🌿🌿</span>
-                            <span class="text-xs">Moderate</span>
+                            <span class="text-xs"><?= __('beach.checkin_moderate') ?></span>
                         </div>
                     </label>
                     <label class="checkin-option">
                         <input type="radio" name="sargassum_level" value="heavy" class="sr-only">
                         <div class="checkin-option-box">
                             <span class="text-lg">🌿🌿🌿</span>
-                            <span class="text-xs">Heavy</span>
+                            <span class="text-xs"><?= __('beach.checkin_heavy') ?></span>
                         </div>
                     </label>
                 </div>
@@ -1188,10 +1253,10 @@ document.addEventListener('keydown', (e) => {
             <!-- Notes -->
             <div>
                 <label for="checkin-notes" class="block text-sm font-medium text-gray-700 mb-1">
-                    Any other notes? <span class="text-gray-400">(optional)</span>
+                    <?= __('beach.checkin_notes') ?> <span class="text-gray-400"><?= __('beach.optional') ?></span>
                 </label>
                 <textarea name="notes" id="checkin-notes" rows="2" maxlength="280"
-                          placeholder="Share a quick tip for others..."
+                          placeholder="<?= h(__('beach.checkin_notes_placeholder')) ?>"
                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none text-sm"></textarea>
             </div>
 
@@ -1199,11 +1264,11 @@ document.addEventListener('keydown', (e) => {
                 <button type="submit" id="checkin-submit-btn"
                         class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
                     <i data-lucide="check" class="w-4 h-4"></i>
-                    <span>Submit Check-In</span>
+                    <span><?= __('beach.checkin_submit') ?></span>
                 </button>
-                <button type="button" onclick="closeCheckinModal()"
+                <button type="button" data-action="closeCheckinModal"
                         class="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                    Cancel
+                    <?= __('beach.checkin_cancel') ?>
                 </button>
             </div>
 
@@ -1213,7 +1278,7 @@ document.addEventListener('keydown', (e) => {
 </div>
 
 
-<script>
+<script <?= cspNonceAttr() ?>>
 function openCheckinModal(beachId, beachName) {
     document.getElementById('checkin-beach-id').value = beachId;
     document.getElementById('checkin-beach-name').textContent = beachName || 'this beach';
@@ -1245,14 +1310,14 @@ async function submitCheckin(event) {
     // Check if at least one option is selected
     const hasSelection = form.querySelector('input[type="radio"]:checked') || form.querySelector('#checkin-notes').value.trim();
     if (!hasSelection) {
-        messageDiv.textContent = 'Please select at least one condition or add a note.';
+        messageDiv.textContent = '<?= __('beach.checkin_select_condition') ?>';
         messageDiv.className = 'bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg';
         messageDiv.classList.remove('hidden');
         return;
     }
 
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="animate-pulse">Submitting...</span>';
+    submitBtn.innerHTML = '<span class="animate-pulse"><?= __('beach.checkin_submitting') ?></span>';
     messageDiv.classList.add('hidden');
 
     try {
@@ -1265,12 +1330,12 @@ async function submitCheckin(event) {
         const data = await response.json();
 
         if (data.success) {
-            messageDiv.textContent = data.message || 'Thanks for checking in!';
+            messageDiv.textContent = data.message || '<?= __('beach.checkin_success') ?>';
             messageDiv.className = 'bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg';
             messageDiv.classList.remove('hidden');
 
             if (typeof showToast === 'function') {
-                showToast('Check-in submitted!', 'success', 3000);
+                showToast('<?= __('beach.checkin_toast_success') ?>', 'success', 3000);
             }
 
             if (typeof window.bfTrack === 'function') {
@@ -1285,7 +1350,7 @@ async function submitCheckin(event) {
             setTimeout(() => {
                 closeCheckinModal();
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Submit Check-In</span>';
+                submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span><?= __('beach.checkin_submit') ?></span>';
             }, 1000);
 
             // Reward gate for guests: contribute -> signup.
@@ -1293,19 +1358,19 @@ async function submitCheckin(event) {
                 showSignupPrompt('favorites', '/beach/<?= h($beach['slug']) ?>?src=checkin');
             }
         } else {
-            messageDiv.textContent = data.error || 'Failed to submit check-in';
+            messageDiv.textContent = data.error || '<?= __('beach.checkin_error') ?>';
             messageDiv.className = 'bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg';
             messageDiv.classList.remove('hidden');
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Submit Check-In</span>';
+            submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span><?= __('beach.checkin_submit') ?></span>';
         }
     } catch (error) {
         console.error('Check-in error:', error);
-        messageDiv.textContent = 'Network error. Please try again.';
+        messageDiv.textContent = '<?= __('beach.checkin_network_error') ?>';
         messageDiv.className = 'bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg';
         messageDiv.classList.remove('hidden');
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Submit Check-In</span>';
+        submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span><?= __('beach.checkin_submit') ?></span>';
     }
 }
 
@@ -1317,29 +1382,29 @@ document.addEventListener('keydown', (e) => {
 
 <!-- Review Form Modal -->
 <div id="review-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"
-     role="dialog" aria-modal="true" aria-labelledby="review-modal-title" onclick="closeReviewModal()">
-    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+     role="dialog" aria-modal="true" aria-labelledby="review-modal-title" data-action="closeReviewModal">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto" data-action-stop data-action="noop" data-on="click">
         <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h2 id="review-modal-title" class="text-lg font-semibold text-gray-900">Write a Review</h2>
-            <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
+            <h2 id="review-modal-title" class="text-lg font-semibold text-gray-900"><?= __('beach.review_modal_title') ?></h2>
+            <button data-action="closeReviewModal" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <form id="review-form" class="p-6 space-y-5" onsubmit="submitReview(event)">
+        <form id="review-form" class="p-6 space-y-5" data-action="submitReview" data-action-args='["__event__"]' data-on="submit">
             <input type="hidden" name="beach_id" id="review-beach-id">
             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
             <p class="text-sm text-gray-600">
-                Share your experience at <strong id="review-beach-name"></strong>
+                <?= __('beach.review_share_experience', ['name' => '<strong id="review-beach-name">' . h($beach['name']) . '</strong>']) ?>
             </p>
 
             <!-- Rating -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Your Rating <span class="text-red-500 a11y-error-text">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('beach.review_your_rating') ?> <span class="text-red-500 a11y-error-text">*</span></label>
                 <div class="flex gap-1" id="star-rating">
                     <?php for ($i = 1; $i <= 5; $i++): ?>
-                    <button type="button" onclick="setRating(<?= $i ?>)" data-star="<?= $i ?>"
+                    <button type="button" data-action="setRating" data-action-args='[<?= $i ?>]' data-star="<?= $i ?>"
                             class="star-btn text-3xl text-gray-300 hover:text-amber-400 transition-colors">
                         ★
                     </button>
@@ -1351,40 +1416,40 @@ document.addEventListener('keydown', (e) => {
             <!-- Title -->
             <div>
                 <label for="review-title" class="block text-sm font-medium text-gray-700 mb-1">
-                    Review Title <span class="text-gray-400">(optional)</span>
+                    <?= __('beach.review_title_label') ?> <span class="text-gray-400"><?= __('beach.optional') ?></span>
                 </label>
                 <input type="text" name="title" id="review-title" maxlength="100"
-                       placeholder="Sum up your experience in a few words..."
+                       placeholder="<?= h(__('beach.review_title_placeholder')) ?>"
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
 
             <!-- Review Text -->
             <div>
                 <label for="review-text" class="block text-sm font-medium text-gray-700 mb-1">
-                    Your Review <span class="text-red-500 a11y-error-text">*</span>
+                    <?= __('beach.review_your_review') ?> <span class="text-red-500 a11y-error-text">*</span>
                 </label>
                 <textarea name="review_text" id="review-text" rows="4" minlength="20" maxlength="5000" required
-                          placeholder="What did you like or dislike? Share tips for other visitors..."
+                          placeholder="<?= h(__('beach.review_body_placeholder')) ?>"
                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
-                <p class="text-xs text-gray-400 mt-1">Minimum 20 characters</p>
+                <p class="text-xs text-gray-400 mt-1"><?= __('beach.review_min_chars') ?></p>
             </div>
 
             <!-- Pros/Cons -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="review-pros" class="block text-sm font-medium text-green-700 mb-1">
-                        Pros <span class="text-gray-400">(optional)</span>
+                        <?= __('reviews.pros') ?> <span class="text-gray-400"><?= __('beach.optional') ?></span>
                     </label>
                     <textarea name="pros" id="review-pros" rows="2" maxlength="500"
-                              placeholder="What you liked..."
+                              placeholder="<?= h(__('reviews.pros_placeholder')) ?>"
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none text-sm"></textarea>
                 </div>
                 <div>
                     <label for="review-cons" class="block text-sm font-medium text-red-700 mb-1">
-                        Cons <span class="text-gray-400">(optional)</span>
+                        <?= __('reviews.cons') ?> <span class="text-gray-400"><?= __('beach.optional') ?></span>
                     </label>
                     <textarea name="cons" id="review-cons" rows="2" maxlength="500"
-                              placeholder="What could be better..."
+                              placeholder="<?= h(__('reviews.cons_placeholder')) ?>"
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none text-sm"></textarea>
                 </div>
             </div>
@@ -1393,23 +1458,23 @@ document.addEventListener('keydown', (e) => {
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="review-visit-date" class="block text-sm font-medium text-gray-700 mb-1">
-                        When did you visit?
+                        <?= __('beach.review_when_visit') ?>
                     </label>
                     <input type="month" name="visit_date" id="review-visit-date"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
                     <label for="review-visited-with" class="block text-sm font-medium text-gray-700 mb-1">
-                        Who did you go with?
+                        <?= __('beach.review_who_with') ?>
                     </label>
                     <select name="visited_with" id="review-visited-with"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Select...</option>
-                        <option value="solo">Solo</option>
-                        <option value="partner">Partner/Couple</option>
-                        <option value="family">Family</option>
-                        <option value="friends">Friends</option>
-                        <option value="group">Group</option>
+                        <option value=""><?= __('beach.review_select') ?></option>
+                        <option value="solo"><?= __('beach.review_solo') ?></option>
+                        <option value="partner"><?= __('beach.review_partner') ?></option>
+                        <option value="family"><?= __('beach.review_family') ?></option>
+                        <option value="friends"><?= __('beach.review_friends') ?></option>
+                        <option value="group"><?= __('beach.review_group') ?></option>
                     </select>
                 </div>
             </div>
@@ -1417,15 +1482,15 @@ document.addEventListener('keydown', (e) => {
             <!-- Photo Upload -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Add Photos <span class="text-gray-400">(optional)</span>
+                    <?= __('beach.review_add_photos') ?> <span class="text-gray-400"><?= __('beach.optional') ?></span>
                 </label>
                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
                     <input type="file" name="photos[]" id="review-photos" accept="image/jpeg,image/png,image/webp" multiple
-                           class="hidden" onchange="previewPhotos(this)">
+                           class="hidden" data-action="previewPhotos" data-action-args='["__this__"]' data-on="change">
                     <label for="review-photos" class="cursor-pointer">
                         <i data-lucide="camera" class="w-8 h-8 mx-auto text-gray-400 mb-2"></i>
-                        <p class="text-sm text-gray-600">Click to upload photos</p>
-                        <p class="text-xs text-gray-400 mt-1">JPG, PNG, or WebP (max 10MB each)</p>
+                        <p class="text-sm text-gray-600"><?= __('beach.review_click_upload') ?></p>
+                        <p class="text-xs text-gray-400 mt-1"><?= __('beach.review_file_types') ?></p>
                     </label>
                 </div>
                 <div id="photo-preview" class="flex gap-2 mt-2 flex-wrap"></div>
@@ -1434,11 +1499,11 @@ document.addEventListener('keydown', (e) => {
             <div class="flex gap-3 pt-2">
                 <button type="submit" id="review-submit-btn"
                         class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-colors">
-                    Submit Review
+                    <?= __('beach.review_submit') ?>
                 </button>
-                <button type="button" onclick="closeReviewModal()"
+                <button type="button" data-action="closeReviewModal"
                         class="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                    Cancel
+                    <?= __('beach.review_cancel') ?>
                 </button>
             </div>
 
@@ -1449,31 +1514,31 @@ document.addEventListener('keydown', (e) => {
 
 <!-- Photo Upload Modal (standalone) -->
 <div id="photo-upload-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"
-     role="dialog" aria-modal="true" aria-labelledby="photo-upload-modal-title" onclick="closePhotoUploadModal()">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full" onclick="event.stopPropagation()">
+     role="dialog" aria-modal="true" aria-labelledby="photo-upload-modal-title" data-action="closePhotoUploadModal">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full" data-action-stop data-action="noop" data-on="click">
         <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h2 id="photo-upload-modal-title" class="text-lg font-semibold text-gray-900">Upload Photos</h2>
-            <button onclick="closePhotoUploadModal()" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
+            <h2 id="photo-upload-modal-title" class="text-lg font-semibold text-gray-900"><?= __('beach.upload_modal_title') ?></h2>
+            <button data-action="closePhotoUploadModal" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <form id="photo-upload-form" class="p-6 space-y-4" onsubmit="submitPhotoUpload(event)">
+        <form id="photo-upload-form" class="p-6 space-y-4" data-action="submitPhotoUpload" data-action-args='["__event__"]' data-on="submit">
             <input type="hidden" name="beach_id" id="upload-beach-id">
             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
 
             <p class="text-sm text-gray-600">
-                Share your photos of <strong id="upload-beach-name"></strong>
+                <?= __('beach.upload_share_photos', ['name' => '<strong id="upload-beach-name">' . h($beach['name']) . '</strong>']) ?>
             </p>
 
             <div>
                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
                     <input type="file" name="photo" id="upload-photo" accept="image/jpeg,image/png,image/webp" required
-                           class="hidden" onchange="previewUploadPhoto(this)">
+                           class="hidden" data-action="previewUploadPhoto" data-action-args='["__this__"]' data-on="change">
                     <label for="upload-photo" class="cursor-pointer">
                         <i data-lucide="image-plus" class="w-10 h-10 mx-auto text-gray-400 mb-2"></i>
-                        <p class="text-sm text-gray-600">Click to select a photo</p>
-                        <p class="text-xs text-gray-400 mt-1">JPG, PNG, or WebP (max 10MB)</p>
+                        <p class="text-sm text-gray-600"><?= __('beach.upload_click_select') ?></p>
+                        <p class="text-xs text-gray-400 mt-1"><?= __('beach.upload_file_types') ?></p>
                     </label>
                 </div>
                 <div id="upload-preview" class="mt-3 hidden">
@@ -1495,7 +1560,7 @@ document.addEventListener('keydown', (e) => {
                         class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg font-medium transition-colors">
                     Upload Photo
                 </button>
-                <button type="button" onclick="closePhotoUploadModal()"
+                <button type="button" data-action="closePhotoUploadModal"
                         class="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                     Cancel
                 </button>
@@ -1508,17 +1573,17 @@ document.addEventListener('keydown', (e) => {
 
 <!-- Photo Lightbox Modal -->
 <div id="photo-lightbox" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center"
-     role="dialog" aria-modal="true" onclick="closePhotoModal()">
-    <button onclick="closePhotoModal()" class="absolute top-4 right-4 text-white/70 hover:text-white p-2" aria-label="Close">
+     role="dialog" aria-modal="true" data-action="closePhotoModal">
+    <button data-action="closePhotoModal" class="absolute top-4 right-4 text-white/70 hover:text-white p-2" aria-label="Close">
         <i data-lucide="x" class="w-8 h-8"></i>
     </button>
-    <div class="max-w-5xl max-h-[90vh] p-4" onclick="event.stopPropagation()">
+    <div class="max-w-5xl max-h-[90vh] p-4" data-action-stop data-action="noop" data-on="click">
         <img id="photo-lightbox-img" src="" alt="" class="max-w-full max-h-[85vh] object-contain rounded-lg">
         <p id="photo-lightbox-caption" class="text-white/80 text-center mt-3 text-sm"></p>
     </div>
 </div>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 // Star rating
 function setRating(rating) {
     document.getElementById('review-rating').value = rating;
@@ -1573,7 +1638,7 @@ function previewPhotos(input) {
                 div.className = 'relative w-16 h-16 rounded-lg overflow-hidden';
                 div.innerHTML = `
                     <img src="${e.target.result}" class="w-full h-full object-cover" alt="Preview">
-                    <button type="button" onclick="removePhoto(${idx})" class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs">×</button>
+                    <button type="button" data-action="removePhoto" data-action-args='[${idx}]' class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs">×</button>
                 `;
                 preview.appendChild(div);
             };
@@ -1853,7 +1918,7 @@ document.addEventListener('keydown', (e) => {
 });
 </script>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 // Load weather data client-side (avoids blocking TTFB with external API call)
 (function() {
     const container = document.getElementById('weather-widget-container');

@@ -11,6 +11,7 @@ require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
 require_once APP_ROOT . '/inc/collection_query.php';
+require_once APP_ROOT . '/inc/i18n.php';
 require_once APP_ROOT . '/components/seo-schemas.php';
 
 // Page metadata
@@ -24,6 +25,8 @@ $collectionData = fetchCollectionBeaches($collectionKey, collectionFiltersFromRe
 $collectionContext = $collectionData['collection'];
 $collectionState = $collectionData['effective_filters'];
 $airportBeaches = $collectionData['beaches'];
+$firstAirportBeach = $airportBeaches[0] ?? null;
+$airportCoverImage = is_array($firstAirportBeach) ? ($firstAirportBeach['cover_image'] ?? null) : null;
 
 $userFavorites = [];
 if (isAuthenticated()) {
@@ -36,7 +39,7 @@ $extraHead = articleSchema(
     $pageTitle,
     $pageDescription,
     '/beaches-near-san-juan-airport',
-    $airportBeaches[0]['cover_image'] ?? null,
+    $airportCoverImage,
     '2026-01-01'
 );
 $extraHead .= collectionPageSchema($pageTitle, $pageDescription, $airportBeaches);
@@ -442,11 +445,11 @@ include APP_ROOT . '/components/header.php';
                     <h3 class="text-lg font-bold text-gray-900">Taxi & Rideshare</h3>
                 </div>
                 <div class="space-y-3 text-sm text-gray-700">
-                    <p><strong>Best for:</strong> Quick, convenient beach access</p>
-                    <p><strong>Cost:</strong> $8-12 to Isla Verde, $15-25 to Condado, $25-32 to Escambrón</p>
-                    <p><strong>Uber/Lyft:</strong> Typically 20-30% cheaper than airport taxis. Pick up at departures level for faster service.</p>
-                    <p><strong>Airport taxis:</strong> Fixed-rate zone pricing. Available 24/7 at arrivals. No surge pricing but higher base rates.</p>
-                    <p><strong>Pro tip:</strong> Split costs with travel companions. For 3-4 people, taxi is more economical than bus.</p>
+                    <p><strong><?= __('airport_labels.best_for') ?></strong> Quick, convenient beach access</p>
+                    <p><strong><?= __('airport_labels.cost') ?></strong> $8-12 to Isla Verde, $15-25 to Condado, $25-32 to Escambrón</p>
+                    <p><strong><?= __('airport_labels.uber_lyft') ?></strong> Typically 20-30% cheaper than airport taxis. Pick up at departures level for faster service.</p>
+                    <p><strong><?= __('airport_labels.airport_taxis') ?></strong> Fixed-rate zone pricing. Available 24/7 at arrivals. No surge pricing but higher base rates.</p>
+                    <p><strong><?= __('airport_labels.pro_tip') ?></strong> Split costs with travel companions. For 3-4 people, taxi is more economical than bus.</p>
                 </div>
             </div>
 
@@ -457,11 +460,11 @@ include APP_ROOT . '/components/header.php';
                     <h3 class="text-lg font-bold text-gray-900">Rental Car</h3>
                 </div>
                 <div class="space-y-3 text-sm text-gray-700">
-                    <p><strong>Best for:</strong> Multi-day stays, exploring beyond San Juan</p>
-                    <p><strong>Cost:</strong> $30-60/day plus parking ($15-25/day at beach hotels)</p>
-                    <p><strong>Pros:</strong> Freedom to visit multiple beaches, explore the island, carry beach gear</p>
-                    <p><strong>Cons:</strong> Parking fees, traffic in San Juan, not ideal for quick layover visits</p>
-                    <p><strong>Pro tip:</strong> NOT recommended for layover beach visits - getting rental car takes 30+ minutes and returning adds stress.</p>
+                    <p><strong><?= __('airport_labels.best_for') ?></strong> Multi-day stays, exploring beyond San Juan</p>
+                    <p><strong><?= __('airport_labels.cost') ?></strong> $30-60/day plus parking ($15-25/day at beach hotels)</p>
+                    <p><strong><?= __('airport_labels.pros') ?></strong> Freedom to visit multiple beaches, explore the island, carry beach gear</p>
+                    <p><strong><?= __('airport_labels.cons') ?></strong> Parking fees, traffic in San Juan, not ideal for quick layover visits</p>
+                    <p><strong><?= __('airport_labels.pro_tip') ?></strong> NOT recommended for layover beach visits - getting rental car takes 30+ minutes and returning adds stress.</p>
                 </div>
             </div>
 
@@ -472,11 +475,11 @@ include APP_ROOT . '/components/header.php';
                     <h3 class="text-lg font-bold text-gray-900">Public Bus (AMA)</h3>
                 </div>
                 <div class="space-y-3 text-sm text-gray-700">
-                    <p><strong>Best for:</strong> Budget travelers with time to spare</p>
-                    <p><strong>Cost:</strong> $0.75 per ride (exact change required)</p>
-                    <p><strong>Route:</strong> Bus C53 connects airport to Isla Verde and beyond. Runs approximately every 30-60 minutes.</p>
-                    <p><strong>Cons:</strong> Slow (20-30 min to Isla Verde), infrequent, limited luggage space, reduced weekend service</p>
-                    <p><strong>Pro tip:</strong> Only viable for 8+ hour layovers or non-time-sensitive first/last day visits.</p>
+                    <p><strong><?= __('airport_labels.best_for') ?></strong> Budget travelers with time to spare</p>
+                    <p><strong><?= __('airport_labels.cost') ?></strong> $0.75 per ride (exact change required)</p>
+                    <p><strong><?= __('airport_labels.route') ?></strong> Bus C53 connects airport to Isla Verde and beyond. Runs approximately every 30-60 minutes.</p>
+                    <p><strong><?= __('airport_labels.cons') ?></strong> Slow (20-30 min to Isla Verde), infrequent, limited luggage space, reduced weekend service</p>
+                    <p><strong><?= __('airport_labels.pro_tip') ?></strong> Only viable for 8+ hour layovers or non-time-sensitive first/last day visits.</p>
                 </div>
             </div>
         </div>
@@ -724,6 +727,6 @@ include APP_ROOT . '/components/header.php';
 
 <?php
 $skipAppScripts = true;
-$extraScripts = '<script defer src="/assets/js/collection-explorer.min.js"></script>';
+$extraScripts = '<script defer src="/assets/js/collection-explorer.min.js" ' . cspNonceAttr() . '></script>';
 ?>
 <?php include APP_ROOT . '/components/footer.php'; ?>

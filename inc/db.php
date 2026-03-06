@@ -21,9 +21,18 @@ function getDB() {
             throw new RuntimeException("Unable to open database at {$dbPath}: " . $e->getMessage(), 0, $e);
         }
 
-        $db->exec('PRAGMA journal_mode=WAL;');
-        $db->exec('PRAGMA foreign_keys=ON;');
+        // Apply the busy timeout before any follow-up pragmas so concurrent requests
+        // wait for transient locks instead of failing during connection setup.
+        $db->busyTimeout(5000);
         $db->exec('PRAGMA busy_timeout=5000;');
+        $db->exec('PRAGMA foreign_keys=ON;');
+
+        // WAL mode persists on the database file, so avoid rewriting it on every
+        // request. Re-applying it conditionally prevents unnecessary lock churn.
+        $journalMode = strtolower((string) $db->querySingle('PRAGMA journal_mode;'));
+        if ($journalMode !== 'wal') {
+            $db->exec('PRAGMA journal_mode=WAL;');
+        }
     }
 
     return $db;

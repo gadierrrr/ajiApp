@@ -6,6 +6,8 @@
 require_once $_SERVER['DOCUMENT_ROOT'] . '/../bootstrap.php';
 
 require_once APP_ROOT . '/inc/db.php';
+require_once APP_ROOT . '/inc/account.php';
+require_once APP_ROOT . '/inc/audit_log.php';
 
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -16,24 +18,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once APP_ROOT . '/inc/admin.php';
     requireAdmin();
 
-    $userId = $_POST['user_id'] ?? '';
-    $action = $_POST['action'] ?? '';
+    if (!validateCsrf($_POST['csrf_token'] ?? '')) {
+        redirect('/admin/users?error=csrf');
+    }
+
+    $userId = trim((string) ($_POST['user_id'] ?? ''));
+    $action = trim((string) ($_POST['action'] ?? ''));
 
     if ($userId && $action) {
-        $db = getDb();
+        $targetUser = queryOne(
+            'SELECT id, email, is_admin FROM users WHERE id = :id',
+            [':id' => $userId]
+        );
 
-        if ($action === 'toggle_admin') {
-            $stmt = $db->prepare("UPDATE users SET is_admin = CASE WHEN is_admin = 1 THEN 0 ELSE 1 END WHERE id = :id");
-            $stmt->bindValue(':id', $userId, SQLITE3_TEXT);
-            $stmt->execute();
+        if (!$targetUser) {
+            redirect('/admin/users?error=missing');
         }
 
-        if ($action === 'delete' && $userId !== $_SESSION['user_id']) {
-            // Don't allow deleting yourself
-            $db->exec("DELETE FROM user_favorites WHERE user_id = '$userId'");
-            $db->exec("DELETE FROM beach_reviews WHERE user_id = '$userId'");
-            $db->exec("DELETE FROM magic_links WHERE user_id = '$userId'");
-            $db->exec("DELETE FROM users WHERE id = '$userId'");
+        if ($action === 'toggle_admin') {
+            if ($userId === (string) ($_SESSION['user_id'] ?? '')) {
+                redirect('/admin/users?error=self_admin');
+            }
+
+            $isCurrentlyAdmin = (int) ($targetUser['is_admin'] ?? 0) === 1;
+            if ($isCurrentlyAdmin) {
+                $adminCount = (int) (queryOne('SELECT COUNT(*) AS count FROM users WHERE is_admin = 1')['count'] ?? 0);
+                if ($adminCount <= 1) {
+                    redirect('/admin/users?error=last_admin');
+                }
+            }
+
+            $newIsAdmin = $isCurrentlyAdmin ? 0 : 1;
+            $result = execute(
+                'UPDATE users SET is_admin = :is_admin WHERE id = :id',
+                [':is_admin' => $newIsAdmin, ':id' => $userId]
+            );
+
+            if (!$result) {
+                redirect('/admin/users?error=save_failed');
+            }
+
+            auditLogRecord('user.role_change', [
+                'actor_user_id' => (string) ($_SESSION['user_id'] ?? ''),
+                'target_type' => 'user',
+                'target_id' => $userId,
+                'target_email_hash' => auditLogHashValue((string) ($targetUser['email'] ?? '')),
+                'metadata' => [
+                    'from_is_admin' => $isCurrentlyAdmin,
+                    'to_is_admin' => (bool) $newIsAdmin,
+                ],
+            ]);
+        } elseif ($action === 'delete') {
+            if ($userId === (string) ($_SESSION['user_id'] ?? '')) {
+                redirect('/admin/users?error=self_delete');
+            }
+
+            $result = deleteUserAccount(
+                $userId,
+                (string) ($_SESSION['user_id'] ?? ''),
+                ['reason' => 'admin_delete', 'self_service' => false]
+            );
+
+            if (!$result['success']) {
+                redirect('/admin/users?error=delete_failed');
+            }
         }
 
         header('Location: /admin/users?updated=1');
@@ -90,6 +138,22 @@ $totalPages = ceil($total / $limit);
 <?php if (isset($_GET['updated'])): ?>
 <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">User updated successfully!</div>
 <?php endif; ?>
+<?php if (isset($_GET['error'])): ?>
+<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+    <?php
+    $errorMessages = [
+        'csrf' => 'Your session expired. Please retry the action.',
+        'missing' => 'That user no longer exists.',
+        'self_admin' => 'You cannot change your own admin role here.',
+        'self_delete' => 'Use the account deletion flow from your profile to delete your own account.',
+        'last_admin' => 'You cannot remove the last remaining admin.',
+        'save_failed' => 'Failed to update the user role.',
+        'delete_failed' => 'Failed to delete the user account.',
+    ];
+    echo h($errorMessages[$_GET['error']] ?? 'The requested action could not be completed.');
+    ?>
+</div>
+<?php endif; ?>
 
 <!-- Users Table -->
 <div class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -144,15 +208,19 @@ $totalPages = ceil($total / $limit);
                     <?php endif; ?>
                 </td>
                 <td class="px-6 py-4 text-right">
+                    <?php if ($user['id'] !== $_SESSION['user_id']): ?>
                     <form method="POST" class="inline">
+                        <?= csrfField() ?>
                         <input type="hidden" name="user_id" value="<?= h($user['id']) ?>">
                         <input type="hidden" name="action" value="toggle_admin">
                         <button type="submit" class="text-blue-600 hover:text-blue-700 text-sm mr-3">
                             <?= $user['is_admin'] ? 'Remove Admin' : 'Make Admin' ?>
                         </button>
                     </form>
+                    <?php endif; ?>
                     <?php if ($user['id'] !== $_SESSION['user_id']): ?>
-                    <form method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this user? This will also delete all their reviews and favorites.')">
+                    <form method="POST" class="inline" data-action-confirm="Are you sure you want to delete this user? This will also delete all their reviews and favorites." data-action="submitParentForm" data-action-args='["__this__"]' data-on="submit">
+                        <?= csrfField() ?>
                         <input type="hidden" name="user_id" value="<?= h($user['id']) ?>">
                         <input type="hidden" name="action" value="delete">
                         <button type="submit" class="text-red-600 hover:text-red-700 text-sm">Delete</button>

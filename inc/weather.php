@@ -175,6 +175,16 @@ function parseWeatherResponse(array $data): array {
  * Get weather description from WMO code
  */
 function getWeatherDescription(int $code): string {
+    // Try i18n first
+    if (function_exists('__')) {
+        $key = 'weather.wmo_' . $code;
+        $translated = __($key);
+        if ($translated !== $key) {
+            return $translated;
+        }
+    }
+
+    // Fallback to hardcoded English
     $descriptions = [
         0 => 'Clear sky',
         1 => 'Mainly clear',
@@ -204,7 +214,7 @@ function getWeatherDescription(int $code): string {
         99 => 'Thunderstorm with heavy hail'
     ];
 
-    return $descriptions[$code] ?? 'Unknown';
+    return $descriptions[$code] ?? (function_exists('__') ? __('weather.wmo_unknown') : 'Unknown');
 }
 
 /**
@@ -266,16 +276,17 @@ function calculateBeachScore(array $current): int {
  * Get UV index level and safety message
  */
 function getUVLevel(float $uvIndex): array {
+    $t = function_exists('__');
     if ($uvIndex < 3) {
-        return ['level' => 'Low', 'color' => 'green', 'message' => 'Minimal protection needed'];
+        return ['level' => $t ? __('weather.uv_low') : 'Low', 'color' => 'green', 'message' => $t ? __('weather.uv_msg_low') : 'Minimal protection needed'];
     } elseif ($uvIndex < 6) {
-        return ['level' => 'Moderate', 'color' => 'yellow', 'message' => 'Wear sunscreen SPF 30+'];
+        return ['level' => $t ? __('weather.uv_moderate') : 'Moderate', 'color' => 'yellow', 'message' => $t ? __('weather.uv_msg_moderate') : 'Wear sunscreen SPF 30+'];
     } elseif ($uvIndex < 8) {
-        return ['level' => 'High', 'color' => 'orange', 'message' => 'Reduce sun exposure 10am-4pm'];
+        return ['level' => $t ? __('weather.uv_high') : 'High', 'color' => 'orange', 'message' => $t ? __('weather.uv_msg_high') : 'Reduce sun exposure 10am-4pm'];
     } elseif ($uvIndex < 11) {
-        return ['level' => 'Very High', 'color' => 'red', 'message' => 'Extra protection essential'];
+        return ['level' => $t ? __('weather.uv_very_high') : 'Very High', 'color' => 'red', 'message' => $t ? __('weather.uv_msg_very_high') : 'Extra protection essential'];
     } else {
-        return ['level' => 'Extreme', 'color' => 'purple', 'message' => 'Avoid sun exposure'];
+        return ['level' => $t ? __('weather.uv_extreme') : 'Extreme', 'color' => 'purple', 'message' => $t ? __('weather.uv_msg_extreme') : 'Avoid sun exposure'];
     }
 }
 
@@ -304,39 +315,46 @@ function getBeachRecommendation(array $weather): array {
     $uv = $weather['current']['uv_index'] ?? 5;
     $rain = $weather['current']['rain'] ?? 0;
     $wind = $weather['current']['wind_speed'] ?? 0;
+    $t = function_exists('__');
 
     if ($score >= 80) {
         return [
-            'verdict' => 'Perfect Beach Day',
+            'verdict' => $t ? __('weather.perfect_day') : 'Perfect Beach Day',
             'icon' => '🏖️',
             'color' => 'green',
-            'message' => 'Ideal conditions for the beach!'
+            'message' => $t ? __('weather.perfect_day_msg') : 'Ideal conditions for the beach!'
         ];
     } elseif ($score >= 60) {
         $tips = [];
-        if ($uv > 7) $tips[] = 'UV is high - bring sunscreen';
-        if ($wind > 10) $tips[] = 'Breezy - great for water sports';
+        if ($uv > 7) $tips[] = $t ? __('weather.good_uv_tip') : 'UV is high - bring sunscreen';
+        if ($wind > 10) $tips[] = $t ? __('weather.good_wind_tip') : 'Breezy - great for water sports';
 
         return [
-            'verdict' => 'Good Beach Day',
+            'verdict' => $t ? __('weather.good_day') : 'Good Beach Day',
             'icon' => '👍',
             'color' => 'blue',
-            'message' => implode('. ', $tips) ?: 'Enjoy the beach!'
+            'message' => implode('. ', $tips) ?: ($t ? __('weather.good_day_msg') : 'Enjoy the beach!')
         ];
     } elseif ($score >= 40) {
         return [
-            'verdict' => 'Fair Conditions',
+            'verdict' => $t ? __('weather.fair_conditions') : 'Fair Conditions',
             'icon' => '🤔',
             'color' => 'yellow',
-            'message' => 'Check the forecast - conditions may vary'
+            'message' => $t ? __('weather.fair_conditions_msg') : 'Check the forecast - conditions may vary'
         ];
     } else {
-        $reason = $rain > 1 ? 'Rain expected' : ($wind > 15 ? 'High winds' : 'Poor conditions');
+        if ($rain > 1) {
+            $message = $t ? __('weather.not_ideal_rain') : 'Rain expected - consider indoor activities';
+        } elseif ($wind > 15) {
+            $message = $t ? __('weather.not_ideal_wind') : 'High winds - consider indoor activities';
+        } else {
+            $message = $t ? __('weather.not_ideal_poor') : 'Poor conditions - consider indoor activities';
+        }
         return [
-            'verdict' => 'Not Ideal',
+            'verdict' => $t ? __('weather.not_ideal') : 'Not Ideal',
             'icon' => '⚠️',
             'color' => 'red',
-            'message' => $reason . ' - consider indoor activities'
+            'message' => $message
         ];
     }
 }
