@@ -1,18 +1,21 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/../bootstrap.php';
+require_once APP_ROOT . '/inc/i18n.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
 
 http_response_code(500);
 $appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
 $errorId = $errorId ?? bin2hex(random_bytes(4));
 $showDetails = $showDetails ?? false;
 $errorMessage = $errorMessage ?? null;
+$currentLang = getCurrentLanguage();
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="<?= htmlspecialchars(getHtmlLang(), ENT_QUOTES, 'UTF-8') ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Server Error | <?= htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') ?></title>
+    <title><?= htmlspecialchars(__('errors.server_error_title'), ENT_QUOTES, 'UTF-8') ?> | <?= htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') ?></title>
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f172a; color: #e2e8f0; }
         main { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
@@ -27,12 +30,12 @@ $errorMessage = $errorMessage ?? null;
 <body>
 <main>
     <section class="card">
-        <h1>Something went wrong</h1>
-        <p>We hit an unexpected error. If this continues, contact support and include error ID <code><?= htmlspecialchars($errorId, ENT_QUOTES, 'UTF-8') ?></code>.</p>
+        <h1><?= htmlspecialchars(__('errors.server_error_title'), ENT_QUOTES, 'UTF-8') ?></h1>
+        <p><?= htmlspecialchars(__('errors.server_error_message'), ENT_QUOTES, 'UTF-8') ?> <code><?= htmlspecialchars($errorId, ENT_QUOTES, 'UTF-8') ?></code>.</p>
         <?php if ($showDetails && $errorMessage): ?>
             <pre><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></pre>
         <?php endif; ?>
-        <a href="/">Back to home</a>
+        <a href="<?= htmlspecialchars(routeUrl('home', $currentLang), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('errors.back_home'), ENT_QUOTES, 'UTF-8') ?></a>
     </section>
 </main>
 </body>

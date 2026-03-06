@@ -19,6 +19,27 @@ Disallow: /favorites.php
 Disallow: /index.php
 Disallow: /municipality.php
 
+# Block .php extension URLs (clean URLs should be used instead)
+Disallow: /best-beaches.php
+Disallow: /best-beaches-san-juan.php
+Disallow: /best-snorkeling-beaches.php
+Disallow: /best-surfing-beaches.php
+Disallow: /best-family-beaches.php
+Disallow: /beaches-near-san-juan.php
+Disallow: /beaches-near-san-juan-airport.php
+Disallow: /hidden-beaches-puerto-rico.php
+Disallow: /quiz.php
+Disallow: /compare.php
+Disallow: /beach.php
+Disallow: /sitemap.php
+Disallow: /offline.php
+Disallow: /onboarding.php
+Disallow: /terms.php
+Disallow: /privacy.php
+Disallow: /profile.php
+Disallow: /go
+Disallow: /guides/cms-router.php
+
 # Allow specific API for rich results
 Allow: /api/beaches.php
 

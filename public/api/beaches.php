@@ -14,9 +14,15 @@
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/../bootstrap.php';
 
+require_once APP_ROOT . '/inc/session.php';
+if (session_status() === PHP_SESSION_NONE && isset($_COOKIE[session_name()])) {
+    session_cache_limiter('');
+    session_start();
+}
 require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
+require_once APP_ROOT . '/inc/i18n.php';
 
 // Detect HTMX request
 $isHtmxRequest = isset($_SERVER['HTTP_HX_REQUEST']);
@@ -164,7 +170,7 @@ if ($format === 'html') {
             }
             echo '</ul>';
         }
-        echo '<button onclick="clearFilters()" class="empty-state-action">Clear all filters</button>';
+        echo '<button data-action="clearFilters" class="empty-state-action">Clear all filters</button>';
         echo '</div>';
         exit;
     }

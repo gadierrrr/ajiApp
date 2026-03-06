@@ -56,8 +56,12 @@ Defined in `.env.example`:
 - `PLUNK_PUBLIC_KEY`
 - `PLUNK_BASE_URL`
 - `PLUNK_WEBHOOK_SECRET`
+- `PLUNK_WEBHOOK_EXPECT_ENV` (optional: `dev`, `staging`, `prod`)
 - `EMAIL_PROVIDER` (`plunk`)
 - `ANTHROPIC_API_KEY`
+- `REFERRAL_ALLOWED_HOSTS`
+- `BACKUP_DIR` (default: `./backups/db`)
+- `BACKUP_KEEP_DAYS` (default: `30`)
 - `APP_ENV` (`dev`, `staging`, `prod`)
 - `APP_DEBUG` (`0` or `1`)
 - Umami analytics (optional):
@@ -78,6 +82,8 @@ This codebase includes a lightweight funnel implementation and Umami-compatible 
   - Quiz results can post to `public/api/send-quiz-results.php` ("Send my matches").
   - Email delivery uses Plunk API keys.
   - Webhook receiver: `public/api/webhooks/plunk.php`
+  - Set a per-environment webhook URL such as `/api/webhooks/plunk.php?env=prod` in production and `/api/webhooks/plunk.php?env=staging` in staging.
+  - Use a distinct `PLUNK_WEBHOOK_SECRET` for each environment and set `PLUNK_WEBHOOK_EXPECT_ENV` to the matching environment tag.
   - Email health probe: `public/api/health/email.php`
 - Tracking:
   - `public/assets/js/analytics.js` defines `window.bfTrack()` and forwards events to Umami when available.
@@ -164,7 +170,7 @@ It runs:
 1. Back up DB before deploy:
 
 ```bash
-cp "$DB_PATH" "${DB_PATH}.backup.$(date +%Y%m%d%H%M%S)"
+php scripts/backup-db.php
 ```
 
 2. If deploy fails after migration:
@@ -176,6 +182,27 @@ cp "$DB_PATH" "${DB_PATH}.backup.$(date +%Y%m%d%H%M%S)"
 3. If migration runner was newly adopted on an existing DB:
 
 - Use `php scripts/migrate.php --baseline` once to mark already-applied migrations.
+
+## Backup automation
+
+Create a verified SQLite backup:
+
+```bash
+php scripts/backup-db.php
+```
+
+Run a restore smoke test against the latest backup:
+
+```bash
+php scripts/restore-smoke-test.php
+```
+
+Suggested daily automation:
+
+```bash
+0 3 * * * cd /var/www/beach-finder && php scripts/backup-db.php >> logs/backup-db.log 2>&1
+20 3 * * * cd /var/www/beach-finder && php scripts/restore-smoke-test.php >> logs/restore-smoke.log 2>&1
+```
 
 ## Security operations
 

@@ -29,7 +29,7 @@ if (!isAuthenticated()) {
         ], 401);
     }
     http_response_code(401);
-    echo '<button class="favorite-btn w-9 h-9 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm border border-white/20 hover:bg-black/60 transition-colors" onclick="event.stopPropagation(); showSignupPrompt(\'favorites\')" aria-label="Sign in to save this beach" title="Sign in to save favorites"><i data-lucide="heart" class="w-4 h-4 text-white/50"></i></button>';
+    echo '<button class="favorite-btn w-9 h-9 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm border border-white/20 hover:bg-black/60 transition-colors" data-action-stop data-action="showSignupPrompt" data-action-args=\'["favorites"]\' aria-label="Sign in to save this beach" title="Sign in to save favorites"><i data-lucide="heart" class="w-4 h-4 text-white/50"></i></button>';
     exit;
 }
 

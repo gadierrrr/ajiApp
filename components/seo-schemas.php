@@ -108,13 +108,18 @@ function getAccessibilityFeatures(array $beach) {
  */
 function beachSchema(array $beach, $reviews = null): string {
     $appUrl = getPublicBaseUrl();
+    $lang = function_exists('getCurrentLanguage') ? getCurrentLanguage() : 'en';
+    $desc = ($lang === 'es' && !empty($beach['description_es'])) ? $beach['description_es'] : ($beach['description'] ?? '');
+    $descFallback = $lang === 'es'
+        ? "Descubre {$beach['name']} en {$beach['municipality']}, Puerto Rico."
+        : "Explore {$beach['name']} in {$beach['municipality']}, Puerto Rico.";
 
     $schema = [
         '@context' => 'https://schema.org',
         '@type' => ['LocalBusiness', 'Beach'],
         '@id' => $appUrl . '/beach/' . $beach['slug'],
         'name' => $beach['name'],
-        'description' => $beach['description'] ?? "Explore {$beach['name']} in {$beach['municipality']}, Puerto Rico.",
+        'description' => $desc ?: $descFallback,
         'url' => $appUrl . '/beach/' . $beach['slug'],
         'geo' => [
             '@type' => 'GeoCoordinates',
@@ -488,7 +493,9 @@ function touristAttractionSchema(array $beach): string {
         '@context' => 'https://schema.org',
         '@type' => 'TouristAttraction',
         'name' => $beach['name'],
-        'description' => $beach['description'] ?? "Beautiful beach in {$beach['municipality']}, Puerto Rico",
+        'description' => (function_exists('getCurrentLanguage') && getCurrentLanguage() === 'es' && !empty($beach['description_es']))
+            ? $beach['description_es']
+            : ($beach['description'] ?? "Beautiful beach in {$beach['municipality']}, Puerto Rico"),
         'url' => $appUrl . '/beach/' . $beach['slug'],
         'touristType' => array_values(array_unique($touristTypes)),
         'geo' => [
@@ -526,83 +533,126 @@ function generateBeachFAQs(array $beach): array {
     $municipality = $beach['municipality'];
     $tags = $beach['tags'] ?? [];
     $amenities = $beach['amenities'] ?? [];
+    $lang = function_exists('getCurrentLanguage') ? getCurrentLanguage() : 'en';
+    $isEs = ($lang === 'es');
 
     // Location FAQ
     $faqs[] = [
-        'question' => "Where is {$name} located?",
-        'answer' => "{$name} is located in {$municipality}, Puerto Rico. " .
-                   "The exact coordinates are {$beach['lat']}, {$beach['lng']}. " .
-                   "You can use GPS navigation or follow signs to {$municipality} and look for beach access points."
+        'question' => $isEs ? "¿Dónde está ubicada {$name}?" : "Where is {$name} located?",
+        'answer' => $isEs
+            ? "{$name} está ubicada en {$municipality}, Puerto Rico. Las coordenadas exactas son {$beach['lat']}, {$beach['lng']}. Puedes usar navegación GPS o seguir las señales hacia {$municipality} y buscar los accesos a la playa."
+            : "{$name} is located in {$municipality}, Puerto Rico. The exact coordinates are {$beach['lat']}, {$beach['lng']}. You can use GPS navigation or follow signs to {$municipality} and look for beach access points."
     ];
 
     // Swimming FAQ
-    $swimmingInfo = "Yes, {$name} is a public beach open for swimming.";
-    if (in_array('calm-waters', $tags)) {
-        $swimmingInfo .= " The beach has calm waters, making it ideal for swimming.";
-    } elseif (in_array('surfing', $tags)) {
-        $swimmingInfo .= " Note that this beach is known for surfing conditions, so waves can be strong.";
-    }
-    if (in_array('lifeguard', $amenities)) {
-        $swimmingInfo .= " Lifeguards are available on duty.";
+    if ($isEs) {
+        $swimmingInfo = "Sí, {$name} es una playa pública abierta para nadar.";
+        if (in_array('calm-waters', $tags)) {
+            $swimmingInfo .= " La playa tiene aguas tranquilas, ideal para nadar.";
+        } elseif (in_array('surfing', $tags)) {
+            $swimmingInfo .= " Ten en cuenta que esta playa es conocida por sus condiciones de surf, por lo que las olas pueden ser fuertes.";
+        }
+        if (in_array('lifeguard', $amenities)) {
+            $swimmingInfo .= " Hay salvavidas disponibles.";
+        }
+    } else {
+        $swimmingInfo = "Yes, {$name} is a public beach open for swimming.";
+        if (in_array('calm-waters', $tags)) {
+            $swimmingInfo .= " The beach has calm waters, making it ideal for swimming.";
+        } elseif (in_array('surfing', $tags)) {
+            $swimmingInfo .= " Note that this beach is known for surfing conditions, so waves can be strong.";
+        }
+        if (in_array('lifeguard', $amenities)) {
+            $swimmingInfo .= " Lifeguards are available on duty.";
+        }
     }
     $faqs[] = [
-        'question' => "Is {$name} good for swimming?",
+        'question' => $isEs ? "¿Es {$name} buena para nadar?" : "Is {$name} good for swimming?",
         'answer' => $swimmingInfo
     ];
 
     // Facilities FAQ
     $facilitiesAnswer = "";
     if (!empty($amenities)) {
-        $amenityNames = array_map(function($a) {
+        $amenityNames = array_map(function($a) use ($isEs) {
+            if ($isEs && function_exists('getAmenityLabel')) return getAmenityLabel($a);
             return ucwords(str_replace('-', ' ', $a));
         }, $amenities);
-        $facilitiesAnswer = "{$name} offers the following facilities: " . implode(', ', $amenityNames) . ".";
+        $facilitiesAnswer = $isEs
+            ? "{$name} ofrece las siguientes instalaciones: " . implode(', ', $amenityNames) . "."
+            : "{$name} offers the following facilities: " . implode(', ', $amenityNames) . ".";
     } else {
-        $facilitiesAnswer = "{$name} is a natural beach. Facilities may be limited, so consider bringing your own supplies.";
+        $facilitiesAnswer = $isEs
+            ? "{$name} es una playa natural. Las instalaciones pueden ser limitadas, así que considera traer tus propios suministros."
+            : "{$name} is a natural beach. Facilities may be limited, so consider bringing your own supplies.";
     }
     $faqs[] = [
-        'question' => "What facilities are available at {$name}?",
+        'question' => $isEs ? "¿Qué instalaciones hay en {$name}?" : "What facilities are available at {$name}?",
         'answer' => $facilitiesAnswer
     ];
 
     // Best activities FAQ
-    $activities = [];
-    if (in_array('swimming', $tags) || in_array('calm-waters', $tags)) $activities[] = 'swimming';
-    if (in_array('snorkeling', $tags)) $activities[] = 'snorkeling';
-    if (in_array('surfing', $tags)) $activities[] = 'surfing';
-    if (in_array('kayaking', $tags)) $activities[] = 'kayaking';
-    if (in_array('paddleboarding', $tags)) $activities[] = 'paddleboarding';
-    if (in_array('fishing', $tags)) $activities[] = 'fishing';
-    if (in_array('hiking', $tags)) $activities[] = 'hiking nearby';
-    if (empty($activities)) $activities = ['swimming', 'relaxing', 'sunbathing'];
-
-    $faqs[] = [
-        'question' => "What activities can I do at {$name}?",
-        'answer' => "Popular activities at {$name} include " . implode(', ', $activities) .
-                   ". The beach is " . (in_array('family-friendly', $tags) ? "family-friendly and " : "") .
-                   "perfect for a day trip from " . $municipality . "."
-    ];
+    if ($isEs) {
+        $activities = [];
+        if (in_array('swimming', $tags) || in_array('calm-waters', $tags)) $activities[] = 'natación';
+        if (in_array('snorkeling', $tags)) $activities[] = 'snorkel';
+        if (in_array('surfing', $tags)) $activities[] = 'surfing';
+        if (in_array('kayaking', $tags)) $activities[] = 'kayak';
+        if (in_array('paddleboarding', $tags)) $activities[] = 'paddleboard';
+        if (in_array('fishing', $tags)) $activities[] = 'pesca';
+        if (in_array('hiking', $tags)) $activities[] = 'senderismo cercano';
+        if (empty($activities)) $activities = ['natación', 'relajación', 'tomar el sol'];
+        $faqs[] = [
+            'question' => "¿Qué actividades puedo hacer en {$name}?",
+            'answer' => "Las actividades populares en {$name} incluyen " . implode(', ', $activities) .
+                       ". La playa es " . (in_array('family-friendly', $tags) ? "familiar y " : "") .
+                       "perfecta para una excursión desde " . $municipality . "."
+        ];
+    } else {
+        $activities = [];
+        if (in_array('swimming', $tags) || in_array('calm-waters', $tags)) $activities[] = 'swimming';
+        if (in_array('snorkeling', $tags)) $activities[] = 'snorkeling';
+        if (in_array('surfing', $tags)) $activities[] = 'surfing';
+        if (in_array('kayaking', $tags)) $activities[] = 'kayaking';
+        if (in_array('paddleboarding', $tags)) $activities[] = 'paddleboarding';
+        if (in_array('fishing', $tags)) $activities[] = 'fishing';
+        if (in_array('hiking', $tags)) $activities[] = 'hiking nearby';
+        if (empty($activities)) $activities = ['swimming', 'relaxing', 'sunbathing'];
+        $faqs[] = [
+            'question' => "What activities can I do at {$name}?",
+            'answer' => "Popular activities at {$name} include " . implode(', ', $activities) .
+                       ". The beach is " . (in_array('family-friendly', $tags) ? "family-friendly and " : "") .
+                       "perfect for a day trip from " . $municipality . "."
+        ];
+    }
 
     // Parking FAQ
     $parkingAnswer = "";
     if (in_array('parking', $amenities) || in_array('free-parking', $amenities)) {
-        $parkingAnswer = "Yes, {$name} has parking available" .
-                        (in_array('free-parking', $amenities) ? " and it's free" : "") . ".";
+        $parkingAnswer = $isEs
+            ? "Sí, {$name} tiene estacionamiento disponible" . (in_array('free-parking', $amenities) ? " y es gratis" : "") . "."
+            : "Yes, {$name} has parking available" . (in_array('free-parking', $amenities) ? " and it's free" : "") . ".";
     } else {
-        $parkingAnswer = "Parking near {$name} may be limited. It's recommended to arrive early, especially on weekends and holidays.";
+        $parkingAnswer = $isEs
+            ? "El estacionamiento cerca de {$name} puede ser limitado. Se recomienda llegar temprano, especialmente los fines de semana y días feriados."
+            : "Parking near {$name} may be limited. It's recommended to arrive early, especially on weekends and holidays.";
     }
     $faqs[] = [
-        'question' => "Is there parking at {$name}?",
+        'question' => $isEs ? "¿Hay estacionamiento en {$name}?" : "Is there parking at {$name}?",
         'answer' => $parkingAnswer
     ];
 
     // Best time FAQ
     $faqs[] = [
-        'question' => "What is the best time to visit {$name}?",
-        'answer' => "The best time to visit {$name} is during Puerto Rico's dry season from December to April. " .
-                   "For fewer crowds, visit on weekday mornings. " .
-                   (in_array('surfing', $tags) ? "For surfing, winter months (November-March) typically have the best swells. " : "") .
-                   "Always check weather conditions before visiting."
+        'question' => $isEs ? "¿Cuál es la mejor época para visitar {$name}?" : "What is the best time to visit {$name}?",
+        'answer' => $isEs
+            ? "La mejor época para visitar {$name} es durante la temporada seca de Puerto Rico, de diciembre a abril. Para menos multitudes, visita en las mañanas entre semana. " .
+               (in_array('surfing', $tags) ? "Para surfing, los meses de invierno (noviembre-marzo) típicamente tienen las mejores olas. " : "") .
+               "Siempre verifica las condiciones del clima antes de visitar."
+            : "The best time to visit {$name} is during Puerto Rico's dry season from December to April. " .
+               "For fewer crowds, visit on weekday mornings. " .
+               (in_array('surfing', $tags) ? "For surfing, winter months (November-March) typically have the best swells. " : "") .
+               "Always check weather conditions before visiting."
     ];
 
     return $faqs;

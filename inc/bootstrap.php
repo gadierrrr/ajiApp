@@ -25,6 +25,9 @@ registerErrorHandlers();
 
 validateEnvironment();
 
+require_once __DIR__ . '/request_security.php';
+enforceDefaultApiRateLimit();
+
 error_reporting(E_ALL);
 ini_set('display_errors', appDebug() ? '1' : '0');
 ini_set('log_errors', '1');

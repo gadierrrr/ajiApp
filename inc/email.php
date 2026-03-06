@@ -27,7 +27,14 @@ function getEmailTemplate($slug) {
 
 function renderEmailTemplate($template, $variables) {
     foreach ($variables as $key => $value) {
-        $template = str_replace('{{' . $key . '}}', $value ?? '', $template);
+        $safeValue = $value ?? '';
+        // Escape user-supplied values for safe HTML embedding.
+        // Variables that intentionally contain HTML (e.g. activity_text, items_html)
+        // use a _html suffix or are pre-built by trusted server code.
+        if (!str_ends_with($key, '_html') && !str_ends_with($key, '_text') && !str_ends_with($key, '_url')) {
+            $safeValue = htmlspecialchars((string) $safeValue, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+        $template = str_replace('{{' . $key . '}}', $safeValue, $template);
     }
     return $template;
 }

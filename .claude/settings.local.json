@@ -100,7 +100,32 @@
       "Bash(sudo cat:*)",
       "Bash(node:*)",
       "Bash(npm --version:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "mcp__claude_ai_Figma__whoami",
+      "WebFetch(domain:www.figma.com)",
+      "WebFetch(domain:developers.figma.com)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp:*)",
+      "Bash(claude:*)",
+      "Bash(npx claude:*)",
+      "Bash(npm show:*)",
+      "Bash(npm info:*)",
+      "Bash(test:*)",
+      "Bash(do echo -n \"$path → \")",
+      "Bash(do echo -n \"$f: \")",
+      "Bash(npm run build:js:*)",
+      "Bash(BEACH_RATE_DELAY=30 php:*)",
+      "Bash(BEACH_RATE_DELAY=35 php:*)",
+      "Bash(BEACH_RATE_DELAY=5 php:*)",
+      "mcp__claude_ai_Figma__generate_diagram",
+      "WebFetch(domain:creator.expediagroup.com)",
+      "WebFetch(domain:help.creator.expediagroup.com)",
+      "WebFetch(domain:partners.viator.com)",
+      "WebFetch(domain:unsplash.com)",
+      "Read(//tmp/**)",
+      "Bash(echo \"--- Safety Info ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(DISTINCT safety_info\\) FROM beaches WHERE safety_info IS NOT NULL AND safety_info <> ''\"\necho \"--- Best Time ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(DISTINCT best_time\\) FROM beaches WHERE best_time IS NOT NULL AND best_time <> ''\"\necho \"--- Parking Details ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(DISTINCT parking_details\\) FROM beaches WHERE parking_details IS NOT NULL AND parking_details <> ''\"\necho \"--- Features ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(*\\) FROM beach_features\"\necho \"--- Tips ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(*\\) FROM beach_tips\"\necho \"--- Unique tip patterns ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(DISTINCT tip\\) FROM beach_tips\")",
+      "Read(//var/log/nginx/**)",
+      "Bash(git status -u)"
     ]
   }
 }

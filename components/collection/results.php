@@ -12,6 +12,8 @@ $collectionData = $collectionData ?? [];
 $collectionState = $collectionState ?? [];
 $userFavorites = $userFavorites ?? [];
 
+$_t = function_exists('__');
+
 $beaches = $collectionData['beaches'] ?? [];
 $total = intval($collectionData['total'] ?? 0);
 $viewMode = in_array($collectionState['view'] ?? 'cards', ['cards', 'list', 'grid', 'map'], true)
@@ -24,7 +26,9 @@ $contextFallback = !empty($collectionData['context_fallback']);
 $activeFilterParts = [];
 $activeSearch = trim((string)($collectionState['q'] ?? ''));
 if ($activeSearch !== '') {
-    $activeFilterParts[] = 'Search "' . $activeSearch . '"';
+    $activeFilterParts[] = $_t
+        ? __('collection.search_filter', ['query' => $activeSearch])
+        : 'Search "' . $activeSearch . '"';
 }
 $activeTags = $collectionState['tags'] ?? [];
 if (!empty($activeTags)) {
@@ -35,16 +39,23 @@ if (!empty($activeTags)) {
         return $tag;
     }, array_values($activeTags));
     $visibleTags = array_slice($tagLabels, 0, 2);
-    $activeFilterParts[] = 'Tags: ' . implode(', ', $visibleTags) . (count($tagLabels) > 2 ? ' +' . (count($tagLabels) - 2) : '');
+    $tagsText = implode(', ', $visibleTags) . (count($tagLabels) > 2 ? ' +' . (count($tagLabels) - 2) : '');
+    $activeFilterParts[] = $_t
+        ? __('collection.tags_filter', ['tags' => $tagsText])
+        : 'Tags: ' . $tagsText;
 }
 if (!empty($collectionState['include_all'])) {
-    $activeFilterParts[] = 'All beaches enabled';
+    $activeFilterParts[] = $_t ? __('collection.all_beaches_enabled') : 'All beaches enabled';
 }
 $activeMunicipality = trim((string)($collectionState['municipality'] ?? ''));
 if ($activeMunicipality !== '') {
-    $activeFilterParts[] = 'Municipality: ' . $activeMunicipality;
+    $activeFilterParts[] = $_t
+        ? __('collection.municipality_filter', ['name' => $activeMunicipality])
+        : 'Municipality: ' . $activeMunicipality;
 }
-$activeFiltersText = !empty($activeFilterParts) ? implode(' | ', $activeFilterParts) : 'No active filters';
+$activeFiltersText = !empty($activeFilterParts)
+    ? implode(' | ', $activeFilterParts)
+    : ($_t ? __('collection.no_active_filters') : 'No active filters');
 $collectionKey = (string)($collectionData['collection']['key'] ?? ($collectionState['collection'] ?? ''));
 $viewHrefs = [];
 foreach (['cards', 'list', 'grid', 'map'] as $mode) {
@@ -72,18 +83,29 @@ foreach (['cards', 'list', 'grid', 'map'] as $mode) {
     }
     $viewHrefs[$mode] = '?' . http_build_query($params);
 }
+
+$viewLabels = [
+    'cards' => $_t ? __('collection.view_cards') : 'Cards',
+    'list'  => $_t ? __('collection.view_list') : 'List',
+    'grid'  => $_t ? __('collection.view_grid') : 'Grid',
+    'map'   => $_t ? __('collection.view_map') : 'Map',
+];
 ?>
 <section class="collection-results">
     <div class="collection-results__header">
         <div class="collection-results__meta" aria-live="polite" aria-atomic="true">
             <p class="collection-results__count">
-                Showing <strong><?= number_format(count($beaches)) ?></strong>
-                of <strong><?= number_format($total) ?></strong> beaches
+                <?php if ($_t): ?>
+                    <?= __('collection.showing_of', ['shown' => number_format(count($beaches)), 'total' => number_format($total)]) ?>
+                <?php else: ?>
+                    Showing <strong><?= number_format(count($beaches)) ?></strong>
+                    of <strong><?= number_format($total) ?></strong> beaches
+                <?php endif; ?>
             </p>
             <p class="collection-results__filters"><?= h($activeFiltersText) ?></p>
         </div>
         <div class="collection-view-switch" role="group" aria-label="Switch collection view">
-            <?php foreach (['cards' => 'Cards', 'list' => 'List', 'grid' => 'Grid', 'map' => 'Map'] as $mode => $label): ?>
+            <?php foreach ($viewLabels as $mode => $label): ?>
             <a href="<?= h((string)($viewHrefs[$mode] ?? '?')) ?>"
                class="collection-view-switch__btn <?= $mode === $viewMode ? 'is-active' : '' ?>"
                data-ce-action="set-view"
@@ -98,15 +120,15 @@ foreach (['cards', 'list', 'grid', 'map'] as $mode) {
 
     <?php if ($contextFallback): ?>
     <div class="collection-results__notice" role="status">
-        No beaches matched this page's default context, so we're showing all beaches.
+        <?= h($_t ? __('collection.context_fallback') : 'No beaches matched this page\'s default context, so we\'re showing all beaches.') ?>
     </div>
     <?php endif; ?>
 
     <?php if ($total === 0): ?>
     <div class="collection-empty">
-        <h3>No beaches match the current filters.</h3>
-        <p>Try clearing filters or switching to all beaches.</p>
-        <button type="button" class="collection-empty__btn" data-ce-action="clear-all">Clear all filters</button>
+        <h3><?= h($_t ? __('collection.no_match_title') : 'No beaches match the current filters.') ?></h3>
+        <p><?= h($_t ? __('collection.no_match_desc') : 'Try clearing filters or switching to all beaches.') ?></p>
+        <button type="button" class="collection-empty__btn" data-ce-action="clear-all"><?= h($_t ? __('collection.clear_all_filters') : 'Clear all filters') ?></button>
     </div>
     <?php else: ?>
     <div id="collection-list-view" class="<?= $viewMode === 'map' ? 'hidden' : '' ?>">
@@ -119,9 +141,9 @@ foreach (['cards', 'list', 'grid', 'map'] as $mode) {
         </div>
     </div>
     <div id="collection-map-view" class="<?= $viewMode === 'map' ? '' : 'hidden' ?>">
-        <div id="collection-map-loading" class="text-sm text-gray-400 mb-3">Loading map...</div>
-        <div id="collection-map-error" class="hidden text-sm text-red-400 mb-3">Unable to load map right now.</div>
-        <div id="collection-map-empty" class="hidden text-sm text-gray-400 mb-3">No beaches with mappable coordinates were found for this view.</div>
+        <div id="collection-map-loading" class="text-sm text-gray-400 mb-3"><?= h($_t ? __('collection.loading_map') : 'Loading map...') ?></div>
+        <div id="collection-map-error" class="hidden text-sm text-red-400 mb-3"><?= h($_t ? __('collection.map_error') : 'Unable to load map right now.') ?></div>
+        <div id="collection-map-empty" class="hidden text-sm text-gray-400 mb-3"><?= h($_t ? __('collection.map_empty') : 'No beaches with mappable coordinates were found for this view.') ?></div>
         <div id="collection-map-container" class="rounded-xl overflow-hidden border border-white/10" style="height: 520px;"></div>
     </div>
     <?php endif; ?>

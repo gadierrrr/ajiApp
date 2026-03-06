@@ -11,12 +11,18 @@ require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
 require_once APP_ROOT . '/components/seo-schemas.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
+require_once APP_ROOT . '/inc/i18n.php';
+$lang = getCurrentLanguage();
 
 // Get municipality from slug or query parameter
 $municipalitySlug = $_GET['m'] ?? '';
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 if ($requestPath === '/municipality.php' && $municipalitySlug !== '') {
-    header('Location: /beaches-in-' . $municipalitySlug, true, 301);
+    $targetPath = $lang === 'es'
+        ? '/es/playas-en-' . $municipalitySlug
+        : '/beaches-in-' . $municipalitySlug;
+    header('Location: ' . $targetPath, true, 301);
     exit;
 }
 
@@ -79,15 +85,15 @@ arsort($tagCounts);
 $topTags = array_slice(array_keys($tagCounts), 0, 5);
 
 // Page metadata
-$pageTitle = "Best Beaches in {$municipality}, Puerto Rico ({$beachCount} Beaches)";
-$pageDescription = "Discover {$beachCount} beautiful beaches in {$municipality}, Puerto Rico. Find the perfect beach with our comprehensive guide including ratings, amenities, directions, and real-time conditions.";
-$canonicalUrl = getPublicBaseUrl() . '/beaches-in-' . $municipalitySlug;
+$pageTitle = __('pages.municipality.title', ['municipality' => $municipality, 'count' => $beachCount]);
+$pageDescription = __('pages.municipality.description', ['municipality' => $municipality, 'count' => $beachCount]);
+$canonicalUrl = getPublicBaseUrl() . routeUrl('municipality', $lang, ['municipality' => $municipalitySlug]);
 
 // Structured data
 $extraHead = articleSchema(
     $pageTitle,
     $pageDescription,
-    '/beaches-in-' . $municipalitySlug,
+    routeUrl('municipality', $lang, ['municipality' => $municipalitySlug]),
     $topBeaches[0]['cover_image'] ?? null
 );
 $extraHead .= collectionPageSchema($pageTitle, $pageDescription, $beaches);
@@ -95,35 +101,38 @@ $extraHead .= collectionPageSchema($pageTitle, $pageDescription, $beaches);
 // Dynamic FAQs based on municipality
 $pageFaqs = [
     [
-        'question' => "How many beaches are in {$municipality}?",
-        'answer' => "{$municipality} has {$beachCount} beaches ranging from popular tourist spots to secluded hidden gems. Our database includes detailed information on all public beaches in the area."
+        'question' => __('pages.municipality.faq_how_many_q', ['municipality' => $municipality]),
+        'answer' => __('pages.municipality.faq_how_many_a', ['municipality' => $municipality, 'count' => $beachCount]),
     ],
     [
-        'question' => "What is the best beach in {$municipality}?",
+        'question' => __('pages.municipality.faq_best_q', ['municipality' => $municipality]),
         'answer' => !empty($topBeaches)
-            ? "{$topBeaches[0]['name']} is one of the top-rated beaches in {$municipality}" .
-              ($topBeaches[0]['google_rating'] ? " with a {$topBeaches[0]['google_rating']} star rating" : "") . ". " .
-              (substr($topBeaches[0]['description'] ?? '', 0, 150))
-            : "{$municipality} has many beautiful beaches to choose from."
+            ? __('pages.municipality.faq_best_a', [
+                'beach' => $topBeaches[0]['name'],
+                'municipality' => $municipality,
+                'rating' => $topBeaches[0]['google_rating']
+            ])
+            : __('pages.municipality.faq_best_a_fallback', ['municipality' => $municipality])
     ],
     [
-        'question' => "What activities can I do at {$municipality} beaches?",
-        'answer' => "Beaches in {$municipality} offer " .
-            (!empty($topTags) ? implode(', ', array_map('getTagLabel', array_slice($topTags, 0, 3))) : "various activities") .
-            ". Each beach has unique characteristics - some are perfect for families, others for surfing or snorkeling."
+        'question' => __('pages.municipality.faq_activities_q', ['municipality' => $municipality]),
+        'answer' => (function() use ($topTags, $municipality) {
+            $tagsList = !empty($topTags) ? implode(', ', array_map('getTagLabel', array_slice($topTags, 0, 3))) : __('pages.municipality.faq_activities_fallback');
+            return __('pages.municipality.faq_activities_a', ['municipality' => $municipality, 'tags' => $tagsList]);
+        })()
     ],
     [
-        'question' => "How do I get to beaches in {$municipality}?",
-        'answer' => "Most beaches in {$municipality} are accessible by car. Use our 'Get Directions' button on each beach card for GPS navigation. Some beaches may require a short walk from parking areas."
-    ]
+        'question' => __('pages.municipality.faq_getting_there_q', ['municipality' => $municipality]),
+        'answer' => __('pages.municipality.faq_getting_there_a', ['municipality' => $municipality]),
+    ],
 ];
 $extraHead .= faqSchema($pageFaqs);
 
 // Breadcrumbs
 $extraHead .= breadcrumbSchema([
-    ['name' => 'Home', 'url' => '/'],
-    ['name' => 'Beaches by Municipality', 'url' => '/#beaches'],
-    ['name' => $municipality, 'url' => '/beaches-in-' . $municipalitySlug]
+    ['name' => __('nav.home'), 'url' => routeUrl('home', $lang)],
+    ['name' => __('nav.beaches'), 'url' => routeUrl('home', $lang) . '#beaches'],
+    ['name' => $municipality, 'url' => routeUrl('municipality', $lang, ['municipality' => $municipalitySlug])]
 ]);
 
 include APP_ROOT . '/components/header.php';
@@ -134,36 +143,36 @@ include APP_ROOT . '/components/header.php';
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Breadcrumbs -->
         <nav class="text-white/70 text-sm mb-4" aria-label="Breadcrumb">
-            <a href="/" class="hover:text-brand-yellow transition-colors">Home</a>
+            <a href="<?= h(routeUrl('home', $lang)) ?>" class="hover:text-brand-yellow transition-colors"><?= h(__('nav.home')) ?></a>
             <span class="mx-2">/</span>
-            <a href="/#beaches" class="hover:text-brand-yellow transition-colors">Beaches</a>
+            <a href="<?= h(routeUrl('home', $lang)) ?>#beaches" class="hover:text-brand-yellow transition-colors"><?= h(__('nav.beaches')) ?></a>
             <span class="mx-2">/</span>
             <span class="text-white/70"><?= h($municipality) ?></span>
         </nav>
 
         <h1 class="text-3xl md:text-5xl font-bold mb-4">
-            Beaches in <?= h($municipality) ?>, Puerto Rico
+            <?= h(__('pages.municipality.hero_title', ['municipality' => $municipality])) ?>
         </h1>
         <p class="text-lg md:text-xl opacity-90 max-w-3xl page-description">
-            Explore <?= $beachCount ?> stunning beaches in <?= h($municipality) ?>. From world-class surfing spots to tranquil swimming coves, discover the perfect beach for your Caribbean adventure.
+            <?= h(__('pages.municipality.hero_subtitle', ['municipality' => $municipality, 'count' => $beachCount])) ?>
         </p>
 
         <!-- Stats Bar -->
         <div class="flex flex-wrap gap-6 mt-6 text-sm">
             <div class="flex items-center gap-2">
                 <i data-lucide="map-pin" class="w-5 h-5 text-brand-yellow"></i>
-                <span><strong><?= $beachCount ?></strong> Beaches</span>
+                <span><?= h(__('pages.municipality.beaches_count', ['count' => $beachCount])) ?></span>
             </div>
             <?php if ($avgRating > 0): ?>
             <div class="flex items-center gap-2">
                 <i data-lucide="star" class="w-5 h-5 text-brand-yellow"></i>
-                <span><strong><?= number_format($avgRating, 1) ?></strong> Avg Rating</span>
+                <span><strong><?= number_format($avgRating, 1) ?></strong> <?= h(__('pages.municipality.avg_rating')) ?></span>
             </div>
             <?php endif; ?>
             <?php if (!empty($topTags)): ?>
             <div class="flex items-center gap-2">
                 <i data-lucide="activity" class="w-5 h-5 text-brand-yellow"></i>
-                <span><?= h(getTagLabel($topTags[0])) ?>, <?= h(getTagLabel($topTags[1] ?? $topTags[0])) ?> & more</span>
+                <span><?= h(getTagLabel($topTags[0])) ?>, <?= h(getTagLabel($topTags[1] ?? $topTags[0])) ?> <?= h(__('pages.municipality.and_more')) ?></span>
             </div>
             <?php endif; ?>
         </div>
@@ -176,8 +185,8 @@ include APP_ROOT . '/components/header.php';
         $contextType = 'municipality';
         $contextKey = (string) $municipalitySlug;
         $filtersQuery = '';
-        $title = 'Send me these beaches';
-        $subtitle = 'Get the full list for ' . $municipality . ' with Google Maps links (no account required).';
+        $title = __('pages.municipality.send_title');
+        $subtitle = __('pages.municipality.send_subtitle', ['municipality' => $municipality]);
         include APP_ROOT . '/components/send-list-capture.php';
         ?>
     </div>
@@ -188,7 +197,7 @@ include APP_ROOT . '/components/header.php';
 <section class="bg-brand-dark border-b border-white/10 py-4">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-3 overflow-x-auto hide-scrollbar">
-            <span class="text-sm text-white/60 whitespace-nowrap">Popular:</span>
+            <span class="text-sm text-white/60 whitespace-nowrap"><?= h(__('pages.municipality.popular')) ?></span>
             <?php foreach ($topTags as $tag): ?>
             <a href="/?municipality=<?= urlencode($municipality) ?>&tags[]=<?= h($tag) ?>#beaches"
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-brand-yellow/20 border border-white/10 hover:border-brand-yellow/30 text-white/80 hover:text-brand-yellow text-sm transition-colors whitespace-nowrap">
@@ -208,16 +217,18 @@ include APP_ROOT . '/components/header.php';
         <!-- Intro Paragraph (SEO Content) -->
         <div class="max-w-4xl mb-8 text-gray-300 leading-relaxed">
             <p class="mb-4">
-                <?= h($municipality) ?> is home to <?= $beachCount ?> diverse beaches along Puerto Rico's beautiful coastline.
-                Whether you're seeking <?= !empty($topTags) ? strtolower(getTagLabel($topTags[0])) : 'adventure' ?>,
-                family-friendly swimming spots, or secluded natural beauty, <?= h($municipality) ?>'s beaches offer something for every visitor.
+                <?= h(__('pages.municipality.intro_p1', ['municipality' => $municipality, 'count' => $beachCount])) ?>
             </p>
             <?php if (!empty($topBeaches)): ?>
+            <?php
+                $beachNamesList = [];
+                foreach (array_slice($topBeaches, 0, 3) as $tb) {
+                    $beachNamesList[] = '<strong>' . h($tb['name']) . '</strong>';
+                }
+                $beachNames = implode(', ', $beachNamesList);
+            ?>
             <p>
-                Popular beaches include <strong><?= h($topBeaches[0]['name']) ?></strong>
-                <?php if (isset($topBeaches[1])): ?>, <strong><?= h($topBeaches[1]['name']) ?></strong><?php endif; ?>
-                <?php if (isset($topBeaches[2])): ?>, and <strong><?= h($topBeaches[2]['name']) ?></strong><?php endif; ?>.
-                Each beach features detailed information including GPS coordinates, amenities, current conditions, and visitor reviews to help you plan the perfect beach day.
+                <?= __('pages.municipality.intro_popular', ['beaches' => $beachNames]) ?>
             </p>
             <?php endif; ?>
         </div>
@@ -238,7 +249,7 @@ include APP_ROOT . '/components/header.php';
 
         <!-- FAQs Section -->
         <div class="mt-16 max-w-4xl">
-            <h2 class="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
+            <h2 class="text-2xl font-bold text-white mb-6"><?= h(__('pages.municipality.faq_title')) ?></h2>
             <div class="space-y-4">
                 <?php foreach ($pageFaqs as $faq): ?>
                 <details class="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors">
@@ -252,6 +263,6 @@ include APP_ROOT . '/components/header.php';
 </section>
 
 <?php
-$extraScripts = '<script defer src="/assets/js/map.js"></script>';
+$extraScripts = '<script defer src="/assets/js/map.js" ' . cspNonceAttr() . '></script>';
 include APP_ROOT . '/components/footer.php';
 ?>

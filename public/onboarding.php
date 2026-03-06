@@ -11,6 +11,8 @@ session_start();
 require_once APP_ROOT . '/inc/db.php';
 require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
+require_once APP_ROOT . '/inc/i18n.php';
 
 // Require authentication
 requireAuth();
@@ -32,14 +34,14 @@ if (isset($_GET['skip']) || isset($_COOKIE['skip_onboarding'])) {
     redirectInternal($redirectUrl);
 }
 
-$pageTitle = 'Welcome to Beach Finder';
-$pageDescription = 'Tell us what you love at the beach to get personalized recommendations.';
+$pageTitle = __('onboarding.title');
+$pageDescription = __('onboarding.description');
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF
     if (!validateCsrf($_POST['csrf_token'] ?? '')) {
-        $error = 'Invalid request. Please try again.';
+        $error = __('onboarding.invalid_request');
     } else {
         $activities = $_POST['activities'] ?? [];
         $vibe = $_POST['vibe'] ?? 'relaxing';
@@ -69,22 +71,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Activity options
 $activityOptions = [
-    ['id' => 'swimming', 'icon' => '🏊', 'label' => 'Swimming', 'desc' => 'Calm, clear waters'],
-    ['id' => 'snorkeling', 'icon' => '🤿', 'label' => 'Snorkeling', 'desc' => 'Coral reefs & marine life'],
-    ['id' => 'surfing', 'icon' => '🏄', 'label' => 'Surfing', 'desc' => 'Waves & water sports'],
-    ['id' => 'relaxing', 'icon' => '🏖️', 'label' => 'Relaxing', 'desc' => 'Sunbathing & lounging'],
-    ['id' => 'family', 'icon' => '👨‍👩‍👧‍👦', 'label' => 'Family', 'desc' => 'Kid-friendly spots'],
-    ['id' => 'photography', 'icon' => '📸', 'label' => 'Photography', 'desc' => 'Scenic & Instagram-worthy'],
-    ['id' => 'hiking', 'icon' => '🥾', 'label' => 'Hiking', 'desc' => 'Trails & hidden coves'],
-    ['id' => 'secluded', 'icon' => '🏝️', 'label' => 'Secluded', 'desc' => 'Off the beaten path'],
+    ['id' => 'swimming', 'icon' => '🏊', 'label' => __('onboarding.act_swimming'), 'desc' => __('onboarding.act_swimming_desc')],
+    ['id' => 'snorkeling', 'icon' => '🤿', 'label' => __('onboarding.act_snorkeling'), 'desc' => __('onboarding.act_snorkeling_desc')],
+    ['id' => 'surfing', 'icon' => '🏄', 'label' => __('onboarding.act_surfing'), 'desc' => __('onboarding.act_surfing_desc')],
+    ['id' => 'relaxing', 'icon' => '🏖️', 'label' => __('onboarding.act_relaxing'), 'desc' => __('onboarding.act_relaxing_desc')],
+    ['id' => 'family', 'icon' => '👨‍👩‍👧‍👦', 'label' => __('onboarding.act_family'), 'desc' => __('onboarding.act_family_desc')],
+    ['id' => 'photography', 'icon' => '📸', 'label' => __('onboarding.act_photography'), 'desc' => __('onboarding.act_photography_desc')],
+    ['id' => 'hiking', 'icon' => '🥾', 'label' => __('onboarding.act_hiking'), 'desc' => __('onboarding.act_hiking_desc')],
+    ['id' => 'secluded', 'icon' => '🏝️', 'label' => __('onboarding.act_secluded'), 'desc' => __('onboarding.act_secluded_desc')],
 ];
 
 // Vibe options
 $vibeOptions = [
-    ['id' => 'relaxing', 'icon' => '😌', 'label' => 'Relaxing', 'desc' => 'Peaceful & calm'],
-    ['id' => 'adventurous', 'icon' => '🤸', 'label' => 'Adventurous', 'desc' => 'Active & exciting'],
-    ['id' => 'family', 'icon' => '👨‍👩‍👧', 'label' => 'Family-Oriented', 'desc' => 'Safe & fun for kids'],
-    ['id' => 'romantic', 'icon' => '💑', 'label' => 'Romantic', 'desc' => 'Perfect for couples'],
+    ['id' => 'relaxing', 'icon' => '😌', 'label' => __('onboarding.vibe_relaxing'), 'desc' => __('onboarding.vibe_relaxing_desc')],
+    ['id' => 'adventurous', 'icon' => '🤸', 'label' => __('onboarding.vibe_adventurous'), 'desc' => __('onboarding.vibe_adventurous_desc')],
+    ['id' => 'family', 'icon' => '👨‍👩‍👧', 'label' => __('onboarding.vibe_family'), 'desc' => __('onboarding.vibe_family_desc')],
+    ['id' => 'romantic', 'icon' => '💑', 'label' => __('onboarding.vibe_romantic'), 'desc' => __('onboarding.vibe_romantic_desc')],
 ];
 
 include APP_ROOT . '/components/header.php';
@@ -98,10 +100,10 @@ include APP_ROOT . '/components/header.php';
                 <span class="text-4xl">👋</span>
             </div>
             <h1 class="text-3xl sm:text-4xl font-bold text-white mb-3">
-                Welcome, <?= h($user['name'] ?? 'Beach Explorer') ?>!
+                <?= h(__('onboarding.welcome', ['name' => $user['name'] ?? __('profile.beach_explorer')])) ?>
             </h1>
             <p class="text-gray-400 text-lg">
-                Let's personalize your beach experience
+                <?= h(__('onboarding.personalize')) ?>
             </p>
         </div>
 
@@ -112,9 +114,9 @@ include APP_ROOT . '/components/header.php';
             <div class="bg-brand-darker/50 backdrop-blur-md rounded-xl border border-white/10 p-6">
                 <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
                     <span class="flex items-center justify-center w-8 h-8 rounded-full bg-brand-yellow text-brand-darker text-sm font-bold">1</span>
-                    What do you love at the beach?
+                    <?= h(__('onboarding.step1_title')) ?>
                 </h2>
-                <p class="text-gray-400 text-sm mb-6">Select all that apply - we'll find beaches that match</p>
+                <p class="text-gray-400 text-sm mb-6"><?= h(__('onboarding.step1_subtitle')) ?></p>
 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <?php foreach ($activityOptions as $activity): ?>
@@ -139,9 +141,9 @@ include APP_ROOT . '/components/header.php';
             <div class="bg-brand-darker/50 backdrop-blur-md rounded-xl border border-white/10 p-6">
                 <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
                     <span class="flex items-center justify-center w-8 h-8 rounded-full bg-brand-yellow text-brand-darker text-sm font-bold">2</span>
-                    What's your beach vibe?
+                    <?= h(__('onboarding.step2_title')) ?>
                 </h2>
-                <p class="text-gray-400 text-sm mb-6">Choose the one that best describes you</p>
+                <p class="text-gray-400 text-sm mb-6"><?= h(__('onboarding.step2_subtitle')) ?></p>
 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <?php foreach ($vibeOptions as $index => $vibe): ?>
@@ -167,11 +169,11 @@ include APP_ROOT . '/components/header.php';
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
 	                <a href="/onboarding?skip=1<?= $redirectUrl !== '/' ? '&redirect=' . urlencode($redirectUrl) : '' ?>"
 	                   class="text-gray-500 hover:text-gray-300 text-sm transition-colors order-2 sm:order-1">
-	                    Skip for now
+	                    <?= h(__('onboarding.skip')) ?>
 	                </a>
                 <button type="submit"
                         class="w-full sm:w-auto bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-8 py-3 rounded-xl font-semibold transition-all hover:-translate-y-0.5 hover:shadow-lg order-1 sm:order-2">
-                    Find My Perfect Beaches
+                    <?= h(__('onboarding.submit')) ?>
                 </button>
             </div>
         </form>
@@ -183,7 +185,7 @@ include APP_ROOT . '/components/header.php';
             <div class="w-3 h-3 rounded-full bg-white/20"></div>
         </div>
         <p class="text-center text-gray-500 text-xs mt-2">
-            You're almost there! Just one more step.
+            <?= h(__('onboarding.almost_there')) ?>
         </p>
     </div>
 </div>

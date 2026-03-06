@@ -4,6 +4,8 @@
  * Supports English and Spanish
  */
 
+require_once __DIR__ . '/locale_routes.php';
+
 // Available languages
 define('SUPPORTED_LANGUAGES', ['en', 'es']);
 define('DEFAULT_LANGUAGE', 'en');
@@ -12,22 +14,24 @@ define('DEFAULT_LANGUAGE', 'en');
  * Get current language from session/cookie/browser
  */
 function getCurrentLanguage(): string {
+    // Check URL locale first (explicit route locale should win).
+    $requestPath = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/');
+    $pathLocale = resolveLocaleFromPath($requestPath);
+    if (is_string($pathLocale) && in_array($pathLocale, SUPPORTED_LANGUAGES, true)) {
+        return $pathLocale;
+    }
+
     // Check session first
-    if (isset($_SESSION['lang']) && in_array($_SESSION['lang'], SUPPORTED_LANGUAGES)) {
+    if (session_status() === PHP_SESSION_ACTIVE
+        && isset($_SESSION['lang'])
+        && in_array($_SESSION['lang'], SUPPORTED_LANGUAGES, true)
+    ) {
         return $_SESSION['lang'];
     }
 
     // Check cookie
-    if (isset($_COOKIE['lang']) && in_array($_COOKIE['lang'], SUPPORTED_LANGUAGES)) {
+    if (isset($_COOKIE['lang']) && in_array($_COOKIE['lang'], SUPPORTED_LANGUAGES, true)) {
         return $_COOKIE['lang'];
-    }
-
-    // Check browser preference
-    if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-        $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
-        if (in_array($browserLang, SUPPORTED_LANGUAGES)) {
-            return $browserLang;
-        }
     }
 
     return DEFAULT_LANGUAGE;
@@ -37,15 +41,22 @@ function getCurrentLanguage(): string {
  * Set language preference
  */
 function setLanguage(string $lang): void {
-    if (!in_array($lang, SUPPORTED_LANGUAGES)) {
+    if (!in_array($lang, SUPPORTED_LANGUAGES, true)) {
         $lang = DEFAULT_LANGUAGE;
     }
 
-    $_SESSION['lang'] = $lang;
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['SERVER_PORT'] ?? null) == 443);
+    $env = function_exists('appEnv') ? appEnv() : 'prod';
+    $secureCookie = $env === 'prod' || $env === 'staging' ? true : $isHttps;
+
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        $_SESSION['lang'] = $lang;
+    }
     setcookie('lang', $lang, [
         'expires' => time() + (365 * 24 * 60 * 60),
         'path' => '/',
-        'secure' => true,
+        'secure' => $secureCookie,
         'httponly' => false,
         'samesite' => 'Lax'
     ]);
@@ -147,5 +158,5 @@ function isRTL(): bool {
  */
 function getHtmlLang(): string {
     $lang = getCurrentLanguage();
-    return $lang === 'es' ? 'es-PR' : 'en';
+    return $lang === 'es' ? 'es-PR' : 'en-US';
 }

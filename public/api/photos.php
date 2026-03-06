@@ -138,13 +138,12 @@ function uploadPhoto() {
 
     $file = $_FILES['photo'];
 
-    // Validate file type
+    // Validate file signature and MIME type
     $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    $signature = detectImageSignature($file['tmp_name']);
+    $mimeType = (string) ($signature['mime'] ?? '');
 
-    if (!in_array($mimeType, $allowedTypes)) {
+    if ($signature === null || !in_array($mimeType, $allowedTypes, true)) {
         jsonResponse(['error' => 'Only JPEG, PNG, and WebP images are allowed'], 400);
     }
 
@@ -179,7 +178,10 @@ function uploadPhoto() {
     $thumbPath = $thumbDir . $filename;
 
     // Get image dimensions
-    $imageInfo = getimagesize($file['tmp_name']);
+    $imageInfo = @getimagesize($file['tmp_name']);
+    if (!is_array($imageInfo)) {
+        jsonResponse(['error' => 'Could not read image dimensions'], 400);
+    }
     $width = $imageInfo[0] ?? 0;
     $height = $imageInfo[1] ?? 0;
 
@@ -325,7 +327,7 @@ function createThumbnail($sourcePath, $destPath, $maxWidth, $maxHeight, $mimeTyp
 
 function renderPhotoThumbnail($photo) {
     ?>
-    <button onclick="openPhotoModal('<?= h($photo['filename']) ?>', '<?= h($photo['caption'] ?? '') ?>')"
+    <button data-action="openPhotoModal" data-action-args='["<?= h($photo['filename']) ?>","<?= h($photo['caption'] ?? '') ?>"]'
             class="aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity group relative">
         <img src="<?= h($photo['thumb_url']) ?>"
              alt="<?= h($photo['caption'] ?? 'Beach photo') ?>"

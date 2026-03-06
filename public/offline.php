@@ -14,7 +14,7 @@ $pageTitle = 'Offline';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline | Puerto Rico Beach Finder</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com" <?= cspNonceAttr() ?>></script>
     <style>
         .wave {
             animation: wave 2s ease-in-out infinite;
@@ -39,7 +39,7 @@ $pageTitle = 'Offline';
         </p>
 
         <div class="space-y-4">
-            <button onclick="window.location.reload()"
+            <button data-action="reloadPage"
                     class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                 Try Again
             </button>
@@ -58,7 +58,7 @@ $pageTitle = 'Offline';
         </div>
     </div>
 
-    <script>
+    <script <?= cspNonceAttr() ?>>
         // Check for connection and reload if back online
         window.addEventListener('online', () => {
             window.location.reload();

@@ -82,6 +82,9 @@
         state.includeAll = includeAll === '1' || includeAll === 'true';
     }
 
+    const htmlLang = document.documentElement.lang || 'en';
+    const langParam = htmlLang.startsWith('es') ? 'es' : 'en';
+
     function paramsForExplorer() {
         const params = new URLSearchParams();
         params.set('collection', state.collection);
@@ -90,6 +93,7 @@
         params.set('sort', state.sort);
         params.set('page', String(state.page));
         params.set('limit', String(state.limit));
+        params.set('lang', langParam);
 
         if (state.q) {
             params.set('q', state.q);
@@ -113,6 +117,7 @@
     }
 
     function getMapContext() {
+        const initialCtx = window.BF_MAP_CONTEXT || {};
         return {
             mode: 'collection',
             collection: state.collection,
@@ -130,7 +135,9 @@
             mapErrorId: 'collection-map-error',
             mapLoadingId: 'collection-map-loading',
             autoScroll: false,
-            updateUrl: false
+            updateUrl: false,
+            i18n: initialCtx.i18n || {},
+            beachUrlPrefix: initialCtx.beachUrlPrefix || '/beach/'
         };
     }
 
@@ -175,7 +182,8 @@
         const activeFilterCount = state.tags.length + (state.includeAll ? 1 : 0);
         if (filterCountBadge) {
             if (activeFilterCount > 0) {
-                filterCountBadge.textContent = activeFilterCount + ' active';
+                const tpl = filterCountBadge.dataset.activeTpl || '__COUNT__ active';
+                filterCountBadge.textContent = tpl.replace('__COUNT__', activeFilterCount);
                 filterCountBadge.hidden = false;
             } else {
                 filterCountBadge.hidden = true;
@@ -282,7 +290,10 @@
             const isFavorite = payload.is_favorite === true;
             button.dataset.favorite = isFavorite ? '1' : '0';
             button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
-            button.setAttribute('aria-label', isFavorite ? 'Remove from favorites' : 'Add to favorites');
+            const ctx = window.BF_MAP_CONTEXT;
+            const removeLabel = (ctx && ctx.i18n && ctx.i18n.removeFavorite) || BF_STRINGS?.fav_remove_aria || 'Remove from favorites';
+            const addLabel = (ctx && ctx.i18n && ctx.i18n.addFavorite) || BF_STRINGS?.fav_add_aria || 'Add to favorites';
+            button.setAttribute('aria-label', isFavorite ? removeLabel : addLabel);
             button.textContent = isFavorite ? '❤️' : '🤍';
         } catch (error) {
             console.error(error);

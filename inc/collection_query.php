@@ -159,7 +159,7 @@ function collectionRunQuery(array $context, array $filters): array {
     $offset = ($filters['page'] - 1) * $filters['limit'];
 
     $selectDistance = $distanceExpr ? ', ' . $distanceExpr . ' AS distance_km' : '';
-    $sql = 'SELECT b.id, b.slug, b.name, b.municipality, b.lat, b.lng, b.cover_image, b.description,
+    $sql = 'SELECT b.id, b.slug, b.name, b.municipality, b.lat, b.lng, b.cover_image, b.description, b.description_es,
                    b.google_rating, b.google_review_count, b.access_label, b.place_id, b.sargassum, b.surf, b.wind,
                    b.has_lifeguard, b.safe_for_children' . $selectDistance . '
             FROM beaches b' . $whereClause . '

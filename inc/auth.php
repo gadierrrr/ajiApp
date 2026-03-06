@@ -14,8 +14,8 @@ function sendMagicLink($email) {
     // Rate limiting - prevent abuse
     $rateLimiter = new RateLimiter(getDB());
 
-    // Check email-based rate limit (5 per hour)
-    $emailLimit = $rateLimiter->check($email, 'magic_link_email', 5, 60);
+    // Check email-based rate limit
+    $emailLimit = $rateLimiter->check($email, 'magic_link_email', 3, 60);
     if (!$emailLimit['allowed']) {
         return ['success' => false, 'error' => 'Too many requests. Please try again later.'];
     }

@@ -32,12 +32,9 @@ const EXTERNAL_ASSETS = [
 
 // Install event - cache core assets
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing service worker...');
-
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('[SW] Precaching core assets');
                 // Cache local assets
                 return cache.addAll(PRECACHE_ASSETS);
             })
@@ -53,8 +50,6 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating service worker...');
-
     const currentCaches = [CACHE_NAME, DATA_CACHE_NAME];
 
     event.waitUntil(
@@ -63,10 +58,7 @@ self.addEventListener('activate', (event) => {
                 return Promise.all(
                     cacheNames
                         .filter((name) => name.startsWith('beach-finder-') && !currentCaches.includes(name))
-                        .map((name) => {
-                            console.log('[SW] Deleting old cache:', name);
-                            return caches.delete(name);
-                        })
+                        .map((name) => caches.delete(name))
                 );
             })
             .then(() => {
@@ -219,16 +211,12 @@ self.addEventListener('message', (event) => {
     }
 
     if (event.data === 'clearCache') {
-        caches.delete(CACHE_NAME).then(() => {
-            console.log('[SW] Cache cleared');
-        });
+        caches.delete(CACHE_NAME);
     }
 });
 
 // Background sync for offline actions (favorites, reviews)
 self.addEventListener('sync', (event) => {
-    console.log('[SW] Background sync:', event.tag);
-
     if (event.tag === 'sync-favorites') {
         event.waitUntil(syncFavorites());
     }
@@ -242,12 +230,10 @@ self.addEventListener('sync', (event) => {
 async function syncFavorites() {
     // This would sync any offline favorite actions
     // Implementation depends on IndexedDB storage of pending actions
-    console.log('[SW] Syncing favorites...');
 }
 
 // Sync pending reviews
 async function syncReviews() {
-    console.log('[SW] Syncing reviews...');
 }
 
 // Push notifications (for future use)

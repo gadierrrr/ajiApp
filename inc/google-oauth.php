@@ -8,10 +8,14 @@
  * Get Google OAuth configuration
  */
 function getGoogleOAuthConfig(): array {
+    $clientId = trim((string) ($_ENV['GOOGLE_CLIENT_ID'] ?? ''));
+    $clientSecret = trim((string) ($_ENV['GOOGLE_CLIENT_SECRET'] ?? ''));
+    $appUrl = rtrim((string) ($_ENV['APP_URL'] ?? 'http://localhost:8082'), '/');
+
     return [
-        'client_id' => $_ENV['GOOGLE_CLIENT_ID'] ?? '',
-        'client_secret' => $_ENV['GOOGLE_CLIENT_SECRET'] ?? '',
-        'redirect_uri' => ($_ENV['APP_URL'] ?? 'http://localhost:8082') . '/auth/google/callback.php',
+        'client_id' => $clientId,
+        'client_secret' => $clientSecret,
+        'redirect_uri' => $appUrl . '/auth/google/callback.php',
         'auth_uri' => 'https://accounts.google.com/o/oauth2/v2/auth',
         'token_uri' => 'https://oauth2.googleapis.com/token',
         'userinfo_uri' => 'https://www.googleapis.com/oauth2/v2/userinfo',
@@ -19,12 +23,55 @@ function getGoogleOAuthConfig(): array {
     ];
 }
 
+function isPlaceholderOAuthValue(string $value): bool {
+    $normalized = strtolower(trim($value));
+    if ($normalized === '') {
+        return false;
+    }
+
+    $placeholderMarkers = [
+        'test',
+        'example',
+        'placeholder',
+        'your-',
+        'your_',
+        'changeme',
+    ];
+
+    foreach ($placeholderMarkers as $marker) {
+        if (str_contains($normalized, $marker)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function isValidGoogleClientId(string $clientId): bool {
+    $value = trim($clientId);
+
+    if ($value === '' || str_contains($value, ' ') || isPlaceholderOAuthValue($value)) {
+        return false;
+    }
+
+    return str_contains($value, '.apps.googleusercontent.com');
+}
+
 /**
  * Check if Google OAuth is configured
  */
 function isGoogleOAuthEnabled(): bool {
     $config = getGoogleOAuthConfig();
-    return !empty($config['client_id']) && !empty($config['client_secret']);
+
+    if (!isValidGoogleClientId($config['client_id'])) {
+        return false;
+    }
+
+    if (empty($config['client_secret']) || isPlaceholderOAuthValue($config['client_secret'])) {
+        return false;
+    }
+
+    return true;
 }
 
 /**

@@ -193,7 +193,7 @@ $recentActivity = getRecentActivity(10);
 
 <?php
 $extraScripts = <<<'SCRIPT'
-<script>
+<script <?= cspNonceAttr() ?>>
 document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.getElementById('quick-add-url');
     const addBtn = document.getElementById('quick-add-btn');

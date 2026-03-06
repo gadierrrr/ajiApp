@@ -147,10 +147,10 @@ include __DIR__ . '/components/header.php';
 
 <!-- Update Place ID Modal -->
 <div id="update-modal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/50" onclick="closeUpdateModal()"></div>
+    <div class="absolute inset-0 bg-black/50" data-action="closeUpdateModal"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 relative">
-            <button onclick="closeUpdateModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <button data-action="closeUpdateModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -173,7 +173,7 @@ include __DIR__ . '/components/header.php';
                     <label class="block text-sm font-medium text-gray-700 mb-1">Suggested Place ID</label>
                     <div class="flex items-center gap-2">
                         <p class="text-green-600 font-mono text-sm flex-1" id="modal-suggested-id">-</p>
-                        <button onclick="useSuggestedId()" class="text-sm text-blue-600 hover:text-blue-700">Use this</button>
+                        <button data-action="useSuggestedId" class="text-sm text-blue-600 hover:text-blue-700">Use this</button>
                     </div>
                     <p class="text-sm text-gray-500 mt-1" id="modal-suggested-name">-</p>
                 </div>
@@ -188,10 +188,10 @@ include __DIR__ . '/components/header.php';
                 </div>
 
                 <div class="flex gap-3 pt-4">
-                    <button onclick="closeUpdateModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button data-action="closeUpdateModal" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                         Cancel
                     </button>
-                    <button onclick="saveNewPlaceId()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <button data-action="saveNewPlaceId" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                         Save Changes
                     </button>
                 </div>
@@ -202,7 +202,7 @@ include __DIR__ . '/components/header.php';
 
 <?php
 $extraScripts = <<<'SCRIPT'
-<script>
+<script <?= cspNonceAttr() ?>>
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 let currentFilter = 'all';
 let currentPage = 1;
@@ -336,20 +336,20 @@ function renderResults(results) {
             <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
                     ${!r.resolved ? `
-                        <button onclick="openUpdateModal('${r.beach_id}', '${escapeHtml(r.beach_name)}', '${escapeHtml(r.current_place_id || '')}', '${escapeHtml(r.found_place_id || '')}', '${escapeHtml(r.google_name || '')}')"
+                        <button data-action="openUpdateModal" data-action-args='["${r.beach_id}","${escapeHtml(r.beach_name)}","${escapeHtml(r.current_place_id || '')}","${escapeHtml(r.found_place_id || '')}","${escapeHtml(r.google_name || '')}"]'
                                 class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Update Place ID">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                             </svg>
                         </button>
-                        <button onclick="toggleFlag('${r.beach_id}', ${r.flagged ? 'false' : 'true'})"
+                        <button data-action="toggleFlag" data-action-args='["${r.beach_id}",${r.flagged ? false : true}]'
                                 class="p-1.5 ${r.flagged ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'} hover:bg-yellow-50 rounded" title="${r.flagged ? 'Remove flag' : 'Flag for review'}">
                             <svg class="w-4 h-4" fill="${r.flagged ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
                             </svg>
                         </button>
                         ${r.issue_type ? `
-                            <button onclick="resolveIssue('${r.beach_id}')"
+                            <button data-action="resolveIssue" data-action-args='["${r.beach_id}"]'
                                     class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded" title="Mark as resolved">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -423,11 +423,11 @@ function renderPagination(data) {
 
     let html = '';
     if (data.page > 1) {
-        html += `<button onclick="goToPage(${data.page - 1})" class="px-3 py-1 border rounded hover:bg-gray-50">Prev</button>`;
+        html += `<button data-action="goToPage" data-action-args='[${data.page - 1}]' class="px-3 py-1 border rounded hover:bg-gray-50">Prev</button>`;
     }
     html += `<span class="px-3 py-1 text-sm text-gray-600">Page ${data.page} of ${data.total_pages}</span>`;
     if (data.page < data.total_pages) {
-        html += `<button onclick="goToPage(${data.page + 1})" class="px-3 py-1 border rounded hover:bg-gray-50">Next</button>`;
+        html += `<button data-action="goToPage" data-action-args='[${data.page + 1}]' class="px-3 py-1 border rounded hover:bg-gray-50">Next</button>`;
     }
     buttons.innerHTML = html;
 }

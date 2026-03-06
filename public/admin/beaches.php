@@ -538,7 +538,7 @@ if ($action === 'list'):
 
                 <?php if ($beach): ?>
                 <div class="mt-6 pt-6 border-t border-gray-200">
-                    <button type="button" onclick="if(confirm('Are you sure you want to delete this beach?')) { document.getElementById('delete-form').submit(); }"
+                    <button type="button" data-action="submitFormById" data-action-args='["delete-form"]' data-action-confirm="Are you sure you want to delete this beach?" data-on="click"
                             class="w-full text-red-600 hover:text-red-700 text-sm">
                         Delete Beach
                     </button>
@@ -588,7 +588,7 @@ $extraScripts = '';
 // Coordinate extraction script (for both new and edit)
 if ($action === 'edit' || $action === 'new'):
     $extraScripts .= <<<'SCRIPT'
-<script>
+<script <?= cspNonceAttr() ?>>
 document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.getElementById('google-maps-url');
     const extractBtn = document.getElementById('extract-coords-btn');
@@ -710,7 +710,7 @@ endif;
 
 // Add admin images script for edit page only
 if ($action === 'edit' && isset($beach)):
-    $extraScripts .= '<script src="/assets/js/admin-images.js"></script>';
+    $extraScripts .= '<script src="/assets/js/admin-images.js" ' . cspNonceAttr() . '></script>';
 endif;
 ?>
 

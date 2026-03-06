@@ -11,6 +11,8 @@ require_once APP_ROOT . '/inc/helpers.php';
 require_once APP_ROOT . '/inc/constants.php';
 require_once APP_ROOT . '/inc/geo.php';
 require_once APP_ROOT . '/inc/collection_query.php';
+require_once APP_ROOT . '/inc/i18n.php';
+require_once APP_ROOT . '/inc/locale_routes.php';
 require_once APP_ROOT . '/components/seo-schemas.php';
 
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -24,26 +26,59 @@ if ($requestPath === '/index.php') {
     exit;
 }
 
-// Trailing-slash redirect or 404 for unknown routes.
-// Any request reaching index.php with a non-root path is a Nginx catch-all
-// fallback — either a trailing-slash variant or an unknown URL.
+// Locale-aware front controller: resolve Spanish (and future locale) routes,
+// handle trailing-slash redirects, or 404 unknown paths.
 // Real directory paths like /guides/ are served by Nginx's directory index
 // and never reach this code.
 if ($requestPath !== '/') {
-    if (str_ends_with($requestPath, '/')) {
+    // Check locale route match first (before trailing-slash redirect).
+    $routeMatch = localeRouteMatch($requestPath);
+
+    if (is_array($routeMatch) && ($routeMatch['route_key'] ?? '') === 'home') {
+        // /es is a valid localized homepage route — fall through to render homepage.
+    } elseif (is_array($routeMatch)) {
+        // Non-home locale route (e.g. /es/mejores-playas-familiares).
+        // Resolve to internal PHP script and include it.
+        $resolved = resolvePublicScriptFromLocalizedPath($requestPath);
+        if (is_array($resolved) && !empty($resolved['script'])) {
+            // Inject query params (e.g. slug for beach detail pages).
+            foreach (($resolved['query'] ?? []) as $qk => $qv) {
+                $_GET[(string) $qk] = $qv;
+            }
+            include APP_ROOT . '/public' . $resolved['script'];
+            exit;
+        }
+        // Fallback: if resolution fails unexpectedly, 404.
+        http_response_code(404);
+        include APP_ROOT . '/public/errors/404.php';
+        exit;
+    } elseif (str_ends_with($requestPath, '/')) {
+        // Trailing-slash redirect for non-matched paths.
         $clean = rtrim($requestPath, '/');
         $qs = $_SERVER['QUERY_STRING'] ?? '';
         header('Location: ' . $clean . ($qs !== '' ? '?' . $qs : ''), true, 301);
         exit;
+    } else {
+        // Check for accented municipality URLs (e.g., /beaches-in-guánica → /beaches-in-guanica)
+        $decodedPath = urldecode($requestPath);
+        if (preg_match('#^/(beaches-in-|es/playas-en-)(.+)$#u', $decodedPath, $m)) {
+            $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $m[2]);
+            if ($ascii !== false && $ascii !== '' && $ascii !== $m[2]) {
+                $qs = $_SERVER['QUERY_STRING'] ?? '';
+                header('Location: /' . $m[1] . $ascii . ($qs !== '' ? '?' . $qs : ''), true, 301);
+                exit;
+            }
+        }
+        // No locale match, no trailing slash — unknown URL → 404.
+        http_response_code(404);
+        include APP_ROOT . '/public/errors/404.php';
+        exit;
     }
-    http_response_code(404);
-    include APP_ROOT . '/public/errors/404.php';
-    exit;
 }
 
 // Page metadata
-$pageTitle = 'Discover Puerto Rico Beaches';
-$pageDescription = 'Find your perfect Puerto Rico beach from a continuously updated island-wide database. Filter by amenities, conditions, and distance. Explore beaches for surfing, snorkeling, family fun, and more.';
+$pageTitle = __('pages.home.title');
+$pageDescription = __('pages.home.description');
 
 // Add structured data for homepage
 $extraHead = websiteSchema() . organizationSchema();
@@ -187,20 +222,20 @@ include APP_ROOT . '/components/header.php';
         <!-- Headline - Single H1 with styled spans -->
         <h1 class="animate-fade-in-up">
             <span class="block text-2xl sm:text-3xl md:text-5xl lg:text-5xl font-bold text-white">
-                Explore <?= number_format($publishedCount) ?> Puerto Rico Beaches --
+                <?= h(__('pages.home.hero_headline_1', ['count' => number_format($publishedCount)])) ?>
             </span>
             <span class="block text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif italic text-brand-yellow animate-fade-in-up delay-200 lg:whitespace-nowrap">
-                from surf breaks to secret coves.
+                <?= h(__('pages.home.hero_headline_2')) ?>
             </span>
         </h1>
 
         <!-- Subtitle with integrated stats -->
         <p class="text-sm sm:text-base text-gray-200 max-w-2xl mx-auto mt-6 md:mt-8 mb-8 md:mb-10 animate-fade-in-up delay-300">
-            <?= number_format($totalBeaches) ?> beaches filtered by vibe, crowd level, and activity
+            <?= h(__('pages.home.hero_subtitle', ['count' => number_format($totalBeaches)])) ?>
             <span class="text-white/70 mx-1">•</span>
             <span class="inline-flex items-center gap-1">
                 <svg class="w-3.5 h-3.5 text-brand-yellow inline" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                <?= number_format($siteStats['avg_rating'], 1) ?> from <?= number_format($siteStats['total_reviews'] / 1000) ?>K+ reviews
+                <?= h(__('pages.home.hero_subtitle_reviews', ['rating' => number_format($siteStats['avg_rating'], 1), 'reviewsK' => number_format($siteStats['total_reviews'] / 1000)])) ?>
             </span>
         </p>
 
@@ -212,13 +247,13 @@ include APP_ROOT . '/components/header.php';
                     <input type="text"
                            name="q"
                            id="hero-search-input"
-                           placeholder="Try &quot;Flamenco Beach&quot; or &quot;snorkeling in Culebra&quot;"
+                           placeholder="<?= h(__('pages.home.search_placeholder')) ?>"
                            value="<?= h($searchQuery) ?>"
                            class="flex-1 bg-transparent border-none text-white placeholder-white/40 px-3 sm:px-4 py-2.5 focus:outline-none text-sm sm:text-base"
-                           aria-label="Search beaches"
+                           aria-label="<?= h(__('common.search')) ?>"
                            autocomplete="off">
                     <button type="submit" class="bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-5 sm:px-8 py-2.5 sm:py-3 rounded-xl sm:rounded-full font-semibold text-sm sm:text-base transition-colors flex-shrink-0">
-                        Search
+                        <?= h(__('pages.home.search_button')) ?>
                     </button>
                 </div>
                 <!-- Search Autocomplete Dropdown -->
@@ -234,10 +269,30 @@ include APP_ROOT . '/components/header.php';
         <div class="animate-fade-in-up delay-500">
             <?php
             $heroCategories = [
-                'surfing' => ['label' => 'Surfing', 'emoji' => '🏄‍♂️'],
-                'snorkeling' => ['label' => 'Snorkeling', 'emoji' => '🤿'],
-                'family-friendly' => ['label' => 'Family', 'emoji' => '👨‍👩‍👧'],
-                'secluded' => ['label' => 'Secluded', 'emoji' => '🌴'],
+                'surfing' => [
+                    'label' => __('pages.home.category_surfing'), 'emoji' => '🏄‍♂️',
+                    'bg' => 'bg-emerald-500/20', 'border' => 'border-emerald-400/40',
+                    'hoverBg' => 'hover:bg-emerald-500/30', 'hoverBorder' => 'hover:border-emerald-400/60',
+                    'countColor' => 'text-emerald-300/70',
+                ],
+                'snorkeling' => [
+                    'label' => __('pages.home.category_snorkeling'), 'emoji' => '🤿',
+                    'bg' => 'bg-teal-500/20', 'border' => 'border-teal-400/40',
+                    'hoverBg' => 'hover:bg-teal-500/30', 'hoverBorder' => 'hover:border-teal-400/60',
+                    'countColor' => 'text-teal-300/70',
+                ],
+                'family-friendly' => [
+                    'label' => __('pages.home.category_family'), 'emoji' => '👨‍👩‍👧',
+                    'bg' => 'bg-amber-500/20', 'border' => 'border-amber-400/40',
+                    'hoverBg' => 'hover:bg-amber-500/30', 'hoverBorder' => 'hover:border-amber-400/60',
+                    'countColor' => 'text-amber-300/70',
+                ],
+                'secluded' => [
+                    'label' => __('pages.home.category_secluded'), 'emoji' => '🌴',
+                    'bg' => 'bg-rose-500/20', 'border' => 'border-rose-400/40',
+                    'hoverBg' => 'hover:bg-rose-500/30', 'hoverBorder' => 'hover:border-rose-400/60',
+                    'countColor' => 'text-rose-300/70',
+                ],
             ];
             ?>
             <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 max-w-2xl mx-auto">
@@ -246,17 +301,17 @@ include APP_ROOT . '/components/header.php';
                     $count = $tagCounts[$tag] ?? 0;
                 ?>
                 <a href="/?tags[]=<?= h($tag) ?>#beaches"
-                   class="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-sm border transition-all duration-200 text-sm <?= $isActive ? 'bg-brand-yellow/20 border-brand-yellow text-brand-yellow' : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/40 text-white' ?>"
+                   class="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-sm border transition-all duration-200 text-sm <?= $isActive ? 'bg-brand-yellow/20 border-brand-yellow text-brand-yellow' : $cat['bg'] . ' ' . $cat['hoverBg'] . ' ' . $cat['border'] . ' ' . $cat['hoverBorder'] . ' text-white' ?>"
                    aria-pressed="<?= $isActive ? 'true' : 'false' ?>">
                     <span><?= $cat['emoji'] ?></span>
                     <span class="font-medium"><?= h($cat['label']) ?></span>
-                    <span class="text-xs <?= $isActive ? 'text-brand-yellow/70' : 'text-white/70' ?>"><?= $count ?></span>
+                    <span class="text-xs <?= $isActive ? 'text-brand-yellow/70' : $cat['countColor'] ?>"><?= $count ?></span>
                 </a>
                 <?php endforeach; ?>
                 <a href="#beaches"
                    class="inline-flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-all duration-200 text-sm">
                     <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
-                    <span>More</span>
+                    <span><?= h(__('pages.home.category_more')) ?></span>
                 </a>
             </div>
         </div>
@@ -264,7 +319,7 @@ include APP_ROOT . '/components/header.php';
 </header>
 
 <!-- Search Autocomplete Script -->
-<script>
+<script <?= cspNonceAttr() ?>>
 (function() {
     const searchInput = document.getElementById('hero-search-input');
     const searchForm = document.getElementById('hero-search-form');
@@ -348,12 +403,12 @@ $trendingBeaches = getTrendingBeaches(8);
 <section class="py-12 md:py-16 pl-4 sm:pl-6 md:pl-20 bg-brand-dark">
     <!-- Section Header -->
     <div class="flex justify-between items-center pr-4 sm:pr-6 md:pr-20 mb-6 md:mb-8">
-        <h2 class="text-2xl md:text-3xl font-bold text-white">Trending Now</h2>
+        <h2 class="text-2xl md:text-3xl font-bold text-white"><?= h(__('pages.home.trending_now')) ?></h2>
         <div class="flex gap-2">
-            <button onclick="scrollCarousel('trending', -1)" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors" aria-label="Previous beaches">
+            <button data-action="scrollCarousel" data-action-args='["trending",-1]' class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors" aria-label="<?= h(__('common.previous')) ?>">
                 <i data-lucide="chevron-left" class="w-5 h-5" aria-hidden="true"></i>
             </button>
-            <button onclick="scrollCarousel('trending', 1)" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors" aria-label="Next beaches">
+            <button data-action="scrollCarousel" data-action-args='["trending",1]' class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors" aria-label="<?= h(__('common.next')) ?>">
                 <i data-lucide="chevron-right" class="w-5 h-5" aria-hidden="true"></i>
             </button>
         </div>
@@ -399,14 +454,18 @@ $trendingBeaches = getTrendingBeaches(8);
                             <span class="text-sm font-medium text-white"><?= number_format($tb['google_rating'], 1) ?></span>
                         </div>
                         <?php if ($tb['google_review_count']): ?>
-                        <span class="text-xs text-white/60">(<?= number_format($tb['google_review_count']) ?> reviews)</span>
+                        <span class="text-xs text-white/60">(<?= number_format($tb['google_review_count']) ?> <?= h(__('beach.reviews')) ?>)</span>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
 
                     <!-- Hover reveal description -->
+                    <?php
+                    $lang = getCurrentLanguage();
+                    $tbDesc = ($lang === 'es' && !empty($tb['description_es'])) ? $tb['description_es'] : ($tb['description'] ?? __('beach.beach_fallback_desc'));
+                    ?>
                     <p class="text-sm text-gray-300 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 line-clamp-2">
-                        <?= h(substr($tb['description'] ?? 'Discover this beautiful beach in Puerto Rico.', 0, 100)) ?>
+                        <?= h(substr($tbDesc, 0, 100)) ?>
                     </p>
                 </div>
             </div>
@@ -417,9 +476,9 @@ $trendingBeaches = getTrendingBeaches(8);
         <a href="/#beaches" class="w-[280px] sm:w-[320px] md:w-[400px] lg:w-[450px] snap-start relative group rounded-xl overflow-hidden flex-shrink-0 shadow-2xl">
             <div class="relative aspect-[4/5] bg-brand-darker border border-white/10 flex flex-col items-center justify-center p-8 text-center">
                 <div class="font-mono text-brand-yellow text-sm mb-4 opacity-60">> ls -la beaches/</div>
-                <h3 class="text-2xl font-bold text-white mb-2">More to Explore</h3>
+                <h3 class="text-2xl font-bold text-white mb-2"><?= h(__('pages.home.more_to_explore')) ?></h3>
                 <p class="text-gray-400 text-sm mb-6 opacity-60 group-hover:opacity-100 transition-opacity">
-                    Browse all <?= number_format($totalBeaches) ?>+ experiences across Puerto Rico
+                    <?= h(__('pages.home.more_to_explore_desc', ['count' => number_format($totalBeaches)])) ?>
                 </p>
                 <div class="w-12 h-12 rounded-full bg-brand-yellow/20 flex items-center justify-center group-hover:bg-brand-yellow/30 transition-colors">
                     <i data-lucide="arrow-right" class="w-6 h-6 text-brand-yellow"></i>
@@ -429,7 +488,7 @@ $trendingBeaches = getTrendingBeaches(8);
     </div>
 </section>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 function scrollCarousel(id, direction) {
     const carousel = document.getElementById(id + '-carousel');
     if (carousel) {
@@ -475,11 +534,11 @@ function scrollCarousel(id, direction) {
                         hx-target="#beach-grid"
                         hx-swap="beforeend"
                         class="bg-brand-yellow hover:bg-yellow-300 text-brand-darker px-6 py-3 rounded-lg font-medium transition-colors">
-                    Load More Beaches
+                    <?= h(__('pages.home.load_more')) ?>
                     <span class="htmx-indicator ml-2">...</span>
                 </button>
                 <p class="text-sm text-white/60 mt-2">
-                    Showing <?= min($page * $perPage, $totalBeaches) ?> of <?= $totalBeaches ?> beaches
+                    <?= h(__('pages.home.showing_count', ['shown' => min($page * $perPage, $totalBeaches), 'total' => $totalBeaches])) ?>
                 </p>
             </div>
             <?php endif; ?>
@@ -494,8 +553,8 @@ function scrollCarousel(id, direction) {
 </section>
 
 <!-- Beach Details Drawer -->
-<div id="beach-drawer" class="drawer-overlay" role="dialog" aria-modal="true" aria-label="Beach details" onclick="closeBeachDrawer(event)">
-    <div class="drawer-content" onclick="event.stopPropagation()">
+<div id="beach-drawer" class="drawer-overlay" role="dialog" aria-modal="true" aria-label="Beach details" data-action="closeBeachDrawer" data-action-args='["__event__"]'>
+    <div class="drawer-content" data-action-stop data-action="noop" data-on="click">
         <div id="drawer-content-inner">
             <!-- Content loaded via HTMX -->
         </div>
@@ -503,11 +562,11 @@ function scrollCarousel(id, direction) {
 </div>
 
 <!-- Share Modal -->
-<div id="share-modal" class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title" onclick="closeShareModal()">
-    <div class="share-modal-content" onclick="event.stopPropagation()">
+<div id="share-modal" class="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title" data-action="closeShareModal">
+    <div class="share-modal-content" data-action-stop data-action="noop" data-on="click">
         <div class="flex justify-between items-center mb-4">
-            <h3 id="share-modal-title" class="text-lg font-semibold">Share Beach</h3>
-            <button onclick="closeShareModal()" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close share dialog">
+            <h3 id="share-modal-title" class="text-lg font-semibold"><?= h(__('pages.home.share_beach')) ?></h3>
+            <button data-action="closeShareModal" class="text-gray-400 hover:text-gray-600 p-1" aria-label="<?= h(__('common.close')) ?>">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
@@ -521,19 +580,19 @@ function scrollCarousel(id, direction) {
 <section id="experiences" class="py-16 md:py-24 px-4 sm:px-6 md:px-20 text-center bg-brand-dark">
     <div class="max-w-4xl mx-auto border border-brand-yellow/20 rounded-3xl p-8 md:p-12 bg-white/5 backdrop-blur-sm">
         <h3 class="text-3xl md:text-4xl font-serif italic text-white mb-6">
-            Not Sure Which Beach? Take the 60-Second Quiz
+            <?= h(__('pages.home.quiz_headline')) ?>
         </h3>
         <p class="text-gray-400 mb-8 text-base md:text-lg max-w-2xl mx-auto">
-            Answer 3 quick questions. Get personalized beach recommendations.
+            <?= h(__('pages.home.quiz_subtitle')) ?>
         </p>
         <a href="/quiz" class="inline-block px-8 md:px-12 py-3 md:py-4 bg-brand-yellow text-brand-darker font-bold rounded-full hover:scale-105 transition-transform">
-            Take the Quiz
+            <?= h(__('pages.home.quiz_button')) ?>
         </a>
     </div>
 </section>
 
 <!-- Pass data to JavaScript (beaches lazy-loaded for performance) -->
-<script>
+<script <?= cspNonceAttr() ?>>
 window.BeachFinder = {
     beaches: [],
     beachesLoaded: false,
@@ -608,6 +667,6 @@ window.BeachFinder = {
 
 <?php
 // Extra scripts for map
-$extraScripts = '<script defer src="/assets/js/map.js"></script>';
+$extraScripts = '<script defer src="/assets/js/map.js" ' . cspNonceAttr() . '></script>';
 include APP_ROOT . '/components/footer.php';
 ?>

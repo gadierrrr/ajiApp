@@ -220,6 +220,28 @@
     return props;
   }
 
+  function referralPropsFromEl(el) {
+    const container = el.closest("[data-bf-referral-campaign]") || el;
+    const props = {};
+
+    const provider = container.getAttribute("data-bf-referral-provider") || "";
+    const campaign = container.getAttribute("data-bf-referral-campaign") || "";
+    const placement = container.getAttribute("data-bf-referral-placement") || "";
+    const pageType = container.getAttribute("data-bf-referral-page-type") || "";
+    const pageSlug = container.getAttribute("data-bf-referral-page-slug") || "";
+    const locale = container.getAttribute("data-bf-referral-locale") || "";
+    const block = container.getAttribute("data-bf-referral-block") || "";
+
+    if (provider) props.provider = provider;
+    if (campaign) props.campaign = campaign;
+    if (placement) props.placement = placement;
+    if (pageType) props.page_type = pageType;
+    if (pageSlug) props.page_slug = pageSlug;
+    if (locale) props.locale = locale;
+    if (block) props.block = block;
+    return props;
+  }
+
   function initDelegatedClickTracking() {
     document.addEventListener("click", function (event) {
       const target = event.target && event.target.closest ? event.target.closest("[data-bf-track]") : null;
@@ -242,7 +264,45 @@
         window.bfTrack("A1_list_to_detail_click", props);
         return;
       }
+
+      if (kind === "referral-click") {
+        const referralProps = referralPropsFromEl(target);
+        window.bfTrack("R2_referral_click", Object.assign({}, props, referralProps));
+        return;
+      }
     });
+  }
+
+  function initReferralImpressionTracking() {
+    if (typeof window.IntersectionObserver !== "function") return;
+
+    const seen = new WeakSet();
+    const observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          const el = entry.target;
+          if (seen.has(el)) return;
+          seen.add(el);
+          observer.unobserve(el);
+
+          const props = referralPropsFromEl(el);
+          window.bfTrack("R1_referral_impression", props);
+        });
+      },
+      { threshold: 0.25 }
+    );
+
+    function observeCurrentNodes() {
+      const nodes = document.querySelectorAll('[data-bf-track="referral-impression"]');
+      nodes.forEach(function (node) {
+        if (seen.has(node)) return;
+        observer.observe(node);
+      });
+    }
+
+    observeCurrentNodes();
+    document.body.addEventListener("htmx:afterSwap", observeCurrentNodes);
   }
 
   function initHtmxDrawerTracking() {
@@ -294,7 +354,7 @@
         }
 
         if (typeof window.showToast === "function") {
-          window.showToast("Sent! Check your inbox for the list.", "success", 3500);
+          window.showToast((window.BF_STRINGS || {}).email_subscribed || "Sent! Check your inbox for the list.", "success", 3500);
         }
 
         const contextType = form.querySelector('input[name="context_type"]')?.value || "";
@@ -303,7 +363,7 @@
         form.reset();
       } catch (e) {
         if (typeof window.showToast === "function") {
-          window.showToast("Could not send the list. Please try again.", "error", 4000);
+          window.showToast((window.BF_STRINGS || {}).email_error || "Could not send the list. Please try again.", "error", 4000);
         }
       } finally {
         if (submitBtn) submitBtn.disabled = false;
@@ -343,6 +403,7 @@
     ensureAnonId();
     trackSignupAttribution();
     initDelegatedClickTracking();
+    initReferralImpressionTracking();
     initHtmxDrawerTracking();
     initFavoriteTrackingFromHtmx();
     initSendListForms();

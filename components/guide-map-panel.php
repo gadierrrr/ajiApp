@@ -11,6 +11,8 @@
  * - $guideMapEmptyNotice (string)
  */
 
+if (!function_exists('__')) { require_once __DIR__ . '/../inc/i18n.php'; }
+
 $guideMapIdsRaw = isset($guideMapIds) && is_array($guideMapIds) ? $guideMapIds : [];
 $guideMapIds = [];
 foreach ($guideMapIdsRaw as $rawId) {
@@ -22,10 +24,10 @@ foreach ($guideMapIdsRaw as $rawId) {
             $guideMapIds[] = $candidate;
         }
 }
-$guideMapTitle = isset($guideMapTitle) ? (string)$guideMapTitle : 'Map View';
-$guideMapDescription = isset($guideMapDescription) ? (string)$guideMapDescription : 'Explore these beaches on the map.';
-$guideMapButtonLabel = isset($guideMapButtonLabel) ? (string)$guideMapButtonLabel : 'View Map';
-$guideMapEmptyNotice = isset($guideMapEmptyNotice) ? (string)$guideMapEmptyNotice : 'No mappable beaches are available for this guide right now.';
+$guideMapTitle = isset($guideMapTitle) ? (string)$guideMapTitle : __('guide_map.map_view');
+$guideMapDescription = isset($guideMapDescription) ? (string)$guideMapDescription : __('guide_map.map_desc');
+$guideMapButtonLabel = isset($guideMapButtonLabel) ? (string)$guideMapButtonLabel : __('guide_map.view_map');
+$guideMapEmptyNotice = isset($guideMapEmptyNotice) ? (string)$guideMapEmptyNotice : __('guide_map.empty_notice');
 $hasGuideMap = !empty($guideMapIds);
 ?>
 <div id="guide-list-view" class="">
@@ -40,7 +42,7 @@ $hasGuideMap = !empty($guideMapIds);
         </a>
         <?php else: ?>
         <span class="inline-block bg-gray-300 text-gray-600 px-6 py-3 rounded-lg font-semibold cursor-not-allowed">
-            Map unavailable
+            <?= __('guide_map.map_unavailable') ?>
         </span>
         <p class="text-sm text-gray-500 mt-3"><?= h($guideMapEmptyNotice) ?></p>
         <?php endif; ?>
@@ -50,20 +52,20 @@ $hasGuideMap = !empty($guideMapIds);
 <?php if ($hasGuideMap): ?>
 <div id="guide-map-view" class="hidden bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8 mt-12">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <h2 class="text-2xl font-bold text-gray-900">Map View</h2>
+        <h2 class="text-2xl font-bold text-gray-900"><?= __('guide_map.map_view') ?></h2>
         <a href="?view=list#guide-list-view"
            data-context-map-action="show-list"
            class="inline-flex items-center justify-center bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
-            List View
+            <?= __('guide_map.list_view') ?>
         </a>
     </div>
-    <div id="guide-map-loading" class="text-sm text-gray-500 mb-3">Loading map...</div>
-    <div id="guide-map-error" class="hidden text-sm text-red-600 mb-3">Unable to load map right now.</div>
+    <div id="guide-map-loading" class="text-sm text-gray-500 mb-3"><?= __('guide_map.loading_map') ?></div>
+    <div id="guide-map-error" class="hidden text-sm text-red-600 mb-3"><?= __('guide_map.map_error') ?></div>
     <div id="guide-map-empty" class="hidden text-sm text-gray-500 mb-3"><?= h($guideMapEmptyNotice) ?></div>
     <div id="guide-map-container" class="rounded-xl overflow-hidden border border-green-200 bg-white" style="height: 520px;"></div>
 </div>
 
-<script>
+<script <?= cspNonceAttr() ?>>
 window.BF_MAP_CONTEXT = {
     mode: "ids",
     ids: <?= json_encode($guideMapIds) ?>,

@@ -12,6 +12,7 @@ if (isset($_COOKIE['BEACH_FINDER_SESSION']) && session_status() === PHP_SESSION_
 require_once __DIR__ . '/../inc/security_headers.php';
 require_once __DIR__ . '/../inc/helpers.php';
 require_once __DIR__ . '/../inc/i18n.php';
+require_once __DIR__ . '/../inc/locale_routes.php';
 
 $user = currentUser();
 $appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
@@ -162,30 +163,29 @@ if ($bodyVariant === 'collection-light') {
     }
 
     $canonicalPath = $normalizeCanonicalPath($canonicalPath);
+    $canonicalPath = localizePath($canonicalPath, $currentLang);
     $canonical = absoluteUrl($canonicalPath);
+    $canonicalEn = absoluteUrl(localizePath($canonicalPath, 'en'));
+    $canonicalEs = absoluteUrl(localizePath($canonicalPath, 'es'));
+    $emitHreflang = isIndexableLocalePath($canonicalPath);
 
-    // Normalize before checking noindex so /login and /login.php behave the same.
+    // Normalize before checking indexability so /login and /login.php behave the same.
     $normalizedRequestPath = $normalizeCanonicalPath($requestPath);
-    $noindexCanonicalPaths = [
-        '/login',
-        '/logout',
-        '/verify',
-        '/favorites',
-        '/profile',
-        '/onboarding',
-        '/offline',
-    ];
-    $robots = in_array($normalizedRequestPath, $noindexCanonicalPaths, true)
-        ? 'noindex, nofollow, noarchive'
-        : 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1';
+    $requestIndexable = isIndexableLocalePath($normalizedRequestPath);
+    $robots = $requestIndexable
+        ? 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+        : 'noindex, nofollow, noarchive';
     if (isset($robotsOverride) && is_string($robotsOverride) && trim($robotsOverride) !== '') {
         $robots = trim($robotsOverride);
     }
     ?>
     <link rel="canonical" href="<?= h($canonical) ?>">
     <meta property="og:url" content="<?= h($canonical) ?>">
-    <link rel="alternate" hreflang="en" href="<?= h($canonical) ?>">
-    <link rel="alternate" hreflang="x-default" href="<?= h($canonical) ?>">
+    <?php if ($emitHreflang): ?>
+    <link rel="alternate" hreflang="en" href="<?= h($canonicalEn) ?>">
+    <link rel="alternate" hreflang="es-PR" href="<?= h($canonicalEs) ?>">
+    <link rel="alternate" hreflang="x-default" href="<?= h($canonicalEn) ?>">
+    <?php endif; ?>
 
     <!-- Robots Meta Tags -->
     <meta name="robots" content="<?= h($robots) ?>">
@@ -199,7 +199,8 @@ if ($bodyVariant === 'collection-light') {
     <?php if ($umamiEnabled && $umamiWebsiteId !== ''): ?>
     <script defer src="<?= h($umamiScriptUrl) ?>"
             data-website-id="<?= h($umamiWebsiteId) ?>"
-            <?php if ($umamiDomains !== ''): ?>data-domains="<?= h($umamiDomains) ?>"<?php endif; ?>></script>
+            <?php if ($umamiDomains !== ''): ?>data-domains="<?= h($umamiDomains) ?>"<?php endif; ?>
+            <?= cspNonceAttr() ?>></script>
     <?php endif; ?>
 
     <!-- Geographic Meta Tags -->
@@ -224,7 +225,7 @@ if ($bodyVariant === 'collection-light') {
     <link rel="preload" href="/assets/css/styles.css?v=3.8" as="style">
 
     <!-- Inter + Playfair Display Fonts - loaded asynchronously to avoid render blocking -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,600;1,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,600;1,700&display=swap" as="style" data-lazy-style>
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500;1,600;1,700&display=swap" rel="stylesheet"></noscript>
 
     <!-- Tailwind CSS (local build - no render-blocking JS) -->
@@ -235,7 +236,7 @@ if ($bodyVariant === 'collection-light') {
     <link rel="preload"
           href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
           as="style"
-          onload="this.onload=null;this.rel='stylesheet'"
+          data-lazy-style
           integrity="sha384-p5cy4wHtKSqjnLUNjQ+8ffCwUp0vlLS+6lg1lc3qqXax2E1EmVCMCAimU+R0MOZH"
           crossorigin="anonymous">
     <noscript><link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"></noscript>
@@ -246,7 +247,10 @@ if ($bodyVariant === 'collection-light') {
             src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"
             integrity="sha384-43WP8IQ+5H0ncT+LNM4dZnu+hPINYmeOuNMhTvHfszzXdFjBEji77gkq7TyjQl/U"
             crossorigin="anonymous"
-            onload="window.lucideLoaded=true;if(typeof lucide!=='undefined')lucide.createIcons()"></script>
+            <?= cspNonceAttr() ?>></script>
+
+    <!-- CSP event delegation (must load before page scripts) -->
+    <script src="/assets/js/csp-bindings.js" <?= cspNonceAttr() ?>></script>
 
     <!-- Custom styles -->
     <link rel="stylesheet" href="/assets/css/styles.css?v=3.8">
@@ -255,7 +259,8 @@ if ($bodyVariant === 'collection-light') {
     <script defer
             src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"
             integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
-            crossorigin="anonymous"></script>
+            crossorigin="anonymous"
+            <?= cspNonceAttr() ?>></script>
 
     <?php if (isset($extraHead)) echo $extraHead; ?>
 </head>

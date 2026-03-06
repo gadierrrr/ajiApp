@@ -11,6 +11,21 @@
 
 require_once __DIR__ . '/../inc/helpers.php';
 require_once __DIR__ . '/../inc/constants.php';
+if (!function_exists('__')) {
+    require_once __DIR__ . '/../inc/i18n.php';
+}
+$cardT = static function (string $key, string $fallback, array $params = []): string {
+    if (function_exists('__')) {
+        return __($key, $params);
+    }
+
+    $replacements = [];
+    foreach ($params as $param => $replacement) {
+        $replacements[':' . $param] = (string) $replacement;
+    }
+
+    return strtr($fallback, $replacements);
+};
 
 // $beach, $distance, $isFavorite, $crowdData, $weatherData should be set before including this file
 $beach = $beach ?? [];
@@ -20,7 +35,7 @@ $crowdData = $crowdData ?? null;
 $weatherData = $weatherData ?? null;
 
 $slug = $beach['slug'] ?? '';
-$name = $beach['name'] ?? 'Unknown Beach';
+$name = $beach['name'] ?? $cardT('beach.unknown', 'Unknown Beach');
 $municipality = $beach['municipality'] ?? '';
 $coverImage = $beach['cover_image'] ?? '/images/beaches/placeholder-beach.webp';
 $googleRating = $beach['google_rating'] ?? null;
@@ -31,7 +46,7 @@ $lng = $beach['lng'] ?? 0;
 
 // Get tags (should be joined in query)
 $tags = $beach['tags'] ?? [];
-$primaryTag = !empty($tags) ? getTagLabel($tags[0]) : 'Beach';
+$primaryTag = !empty($tags) ? getTagLabel($tags[0]) : $cardT('beach.beach_label', 'Beach');
 
 // Format distance
 $distanceFormatted = $distance !== null ? formatDistanceDisplay($distance) : null;
@@ -58,9 +73,9 @@ $hasConditions = $sargassum || $surf || $wind;
          data-lng="<?= h($lng) ?>"
          role="button"
          tabindex="0"
-         aria-label="View details for <?= h($name) ?> beach in <?= h($municipality) ?>"
-         onclick="openBeachDrawer('<?= h($beach['id']) ?>')"
-         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openBeachDrawer('<?= h($beach['id']) ?>');}">
+         aria-label="<?= h($cardT('beach.card_aria', 'View details for :name beach in :municipality', ['name' => $name, 'municipality' => $municipality])) ?>"
+         data-action="openBeachDrawer" data-action-args='["<?= h($beach['id']) ?>"]'
+         data-on="click,keydown" data-action-keys="Enter, " data-action-prevent>
 
     <!-- Image Container with gradient overlay -->
     <div class="relative aspect-[4/3] overflow-hidden">
@@ -91,16 +106,16 @@ $hasConditions = $sargassum || $surf || $wind;
                     hx-target="this"
                     hx-swap="outerHTML"
                     hx-vals='{"beach_id": "<?= h($beach['id']) ?>", "csrf_token": "<?= h(csrfToken()) ?>"}'
-                    onclick="event.stopPropagation()"
-                    aria-label="<?= $isFavorite ? 'Remove from favorites' : 'Add to favorites' ?>"
+                    data-action-stop data-action="noop" data-on="click"
+                    aria-label="<?= $isFavorite ? h($cardT('beach.remove_favorite', 'Remove from favorites')) : h($cardT('beach.add_favorite', 'Add to favorites')) ?>"
                     aria-pressed="<?= $isFavorite ? 'true' : 'false' ?>">
                 <i data-lucide="heart" class="w-4 h-4 <?= $isFavorite ? 'text-red-400 fill-red-400' : 'text-white/80' ?>" aria-hidden="true"></i>
             </button>
             <?php else: ?>
             <button class="favorite-btn w-9 h-9 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm border border-white/20 hover:bg-black/60 transition-colors"
-                    onclick="event.stopPropagation(); showSignupPrompt('favorites')"
-                    aria-label="Sign in to save this beach"
-                    title="Sign in to save favorites">
+                    data-action-stop data-action="showSignupPrompt" data-action-args='["favorites"]'
+                    aria-label="<?= h($cardT('beach.sign_in_to_save', 'Sign in to save this beach')) ?>"
+                    title="<?= h($cardT('beach.sign_in_to_save', 'Sign in to save this beach')) ?>">
                 <i data-lucide="heart" class="w-4 h-4 text-white/50" aria-hidden="true"></i>
             </button>
             <?php endif; ?>
@@ -123,7 +138,7 @@ $hasConditions = $sargassum || $surf || $wind;
         <div class="score-badge <?= $scoreBadgeClass ?>"
              aria-label="Rating: <?= number_format($googleRating, 1) ?> out of 5">
             <span class="score-value"><?= number_format($googleRating, 1) ?></span>
-            <span class="score-label"><?= $googleReviewCount ? number_format($googleReviewCount) . ' reviews' : 'Rating' ?></span>
+            <span class="score-label"><?= $googleReviewCount ? number_format($googleReviewCount) . ' ' . h($cardT('beach.reviews', 'Reviews')) : h($cardT('beach.rating_label', 'Rating')) ?></span>
         </div>
         <?php endif; ?>
 
@@ -159,31 +174,31 @@ $hasConditions = $sargassum || $surf || $wind;
             ?>
             <span class="inline-flex items-center gap-1 text-xs <?= $crowdColorClass ?> px-2 py-0.5 rounded-full" title="<?= h($crowdData['time_label'] ?? '') ?>">
                 <span>👥</span>
-                <span class="font-medium"><?= h($crowdData['label'] ?? 'Unknown') ?></span>
+                <span class="font-medium"><?= h($crowdData['label'] ?? $cardT('beach.unknown_crowd', 'Unknown')) ?></span>
             </span>
             <?php endif; ?>
 
             <?php if ($hasConditions): ?>
             <!-- Condition Indicators -->
-            <div class="condition-indicators flex items-center gap-1.5 ml-auto" aria-label="Beach conditions">
+            <div class="condition-indicators flex items-center gap-1.5 ml-auto" aria-label="<?= h($cardT('beach.beach_conditions', 'Beach Conditions')) ?>">
                 <?php if ($sargassum): ?>
                 <span class="condition-dot <?= getConditionDotClass($sargassum) ?>"
-                      title="Sargassum: <?= h(getConditionLabel('sargassum', $sargassum)) ?>"
-                      aria-label="Sargassum: <?= h(getConditionLabel('sargassum', $sargassum)) ?>">
+                      title="<?= h($cardT('beach.condition_sargassum', 'Sargassum')) ?>: <?= h(getConditionLabel('sargassum', $sargassum)) ?>"
+                      aria-label="<?= h($cardT('beach.condition_sargassum', 'Sargassum')) ?>: <?= h(getConditionLabel('sargassum', $sargassum)) ?>">
                     <i data-lucide="leaf" class="w-3 h-3" aria-hidden="true"></i>
                 </span>
                 <?php endif; ?>
                 <?php if ($surf): ?>
                 <span class="condition-dot <?= getConditionDotClass($surf) ?>"
-                      title="Surf: <?= h(getConditionLabel('surf', $surf)) ?>"
-                      aria-label="Surf: <?= h(getConditionLabel('surf', $surf)) ?>">
+                      title="<?= h($cardT('beach.condition_surf', 'Surf')) ?>: <?= h(getConditionLabel('surf', $surf)) ?>"
+                      aria-label="<?= h($cardT('beach.condition_surf', 'Surf')) ?>: <?= h(getConditionLabel('surf', $surf)) ?>">
                     <i data-lucide="waves" class="w-3 h-3" aria-hidden="true"></i>
                 </span>
                 <?php endif; ?>
                 <?php if ($wind): ?>
                 <span class="condition-dot <?= getConditionDotClass($wind) ?>"
-                      title="Wind: <?= h(getConditionLabel('wind', $wind)) ?>"
-                      aria-label="Wind: <?= h(getConditionLabel('wind', $wind)) ?>">
+                      title="<?= h($cardT('beach.condition_wind', 'Wind')) ?>: <?= h(getConditionLabel('wind', $wind)) ?>"
+                      aria-label="<?= h($cardT('beach.condition_wind', 'Wind')) ?>: <?= h(getConditionLabel('wind', $wind)) ?>">
                     <i data-lucide="wind" class="w-3 h-3" aria-hidden="true"></i>
                 </span>
                 <?php endif; ?>
@@ -194,39 +209,39 @@ $hasConditions = $sargassum || $surf || $wind;
         <!-- Action Buttons - Single Row -->
         <div class="card-actions flex gap-2">
             <button type="button"
-                    onclick="event.stopPropagation(); openBeachDrawer('<?= h($beach['id']) ?>')"
+                    data-action-stop data-action="openBeachDrawer" data-action-args='["<?= h($beach['id']) ?>"]'
                     class="flex-1 flex items-center justify-center gap-1.5 bg-brand-yellow hover:bg-yellow-300 text-brand-darker text-sm font-semibold h-10 px-3 rounded-lg transition-colors">
-                <i data-lucide="book-open" class="w-4 h-4" aria-hidden="true"></i>
-                <span>Details</span>
+                <i data-lucide="book-open" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
+                <span><?= h($cardT('beach.details', 'Details')) ?></span>
             </button>
             <a href="<?= h(getDirectionsUrl($beach)) ?>"
                target="_blank"
                rel="noopener noreferrer"
-               onclick="event.stopPropagation()"
+               data-action-stop data-action="noop" data-on="click"
                data-bf-track="directions"
                data-bf-beach-id="<?= h($beach['id']) ?>"
                data-bf-beach-slug="<?= h($slug) ?>"
                data-bf-municipality="<?= h($municipality) ?>"
                data-bf-source="card"
-               class="flex-1 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium h-10 px-2 rounded-lg transition-colors border border-white/10"
-               aria-label="Get directions to <?= h($name) ?>">
-                <i data-lucide="navigation" class="w-4 h-4" aria-hidden="true"></i>
-                <span>Go</span>
+               class="flex-1 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium h-10 px-3 rounded-lg transition-colors border border-white/10"
+               aria-label="<?= h($cardT('beach.go', 'Go')) ?> <?= h($name) ?>">
+                <i data-lucide="navigation" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
+                <span><?= h($cardT('beach.go', 'Go')) ?></span>
             </a>
             <button type="button"
-                    onclick="event.stopPropagation(); toggleCompare('<?= h($beach['id']) ?>', '<?= h(addslashes($name)) ?>', '<?= h($coverImage) ?>', this)"
-                    class="compare-btn flex-1 flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 text-white text-sm h-10 px-2 rounded-lg transition-colors border border-white/10"
-                    aria-label="Add <?= h($name) ?> to comparison"
+                    data-action-stop data-action="toggleCompare" data-action-args='["<?= h($beach['id']) ?>","<?= h(addslashes($name)) ?>","<?= h($coverImage) ?>","__this__"]'
+                    class="compare-btn flex-none flex items-center justify-center bg-white/10 hover:bg-white/20 text-white text-sm h-10 w-10 rounded-lg transition-colors border border-white/10"
+                    aria-label="<?= h($cardT('beach.compare', 'Compare')) ?> <?= h($name) ?>"
+                    title="<?= h($cardT('beach.compare', 'Compare')) ?>"
                     data-beach-id="<?= h($beach['id']) ?>">
                 <i data-lucide="git-compare" class="w-4 h-4" aria-hidden="true"></i>
-                <span class="hidden sm:inline">Compare</span>
             </button>
             <button type="button"
-                    onclick="event.stopPropagation(); shareBeach('<?= h($slug) ?>', '<?= h(addslashes($name)) ?>')"
-                    class="flex-1 flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 text-white text-sm h-10 px-2 rounded-lg transition-colors border border-white/10"
-                    aria-label="Share <?= h($name) ?>">
+                    data-action-stop data-action="shareBeach" data-action-args='["<?= h($slug) ?>","<?= h(addslashes($name)) ?>"]'
+                    class="flex-none flex items-center justify-center bg-white/10 hover:bg-white/20 text-white text-sm h-10 w-10 rounded-lg transition-colors border border-white/10"
+                    aria-label="<?= h($cardT('common.share', 'Share')) ?> <?= h($name) ?>"
+                    title="<?= h($cardT('common.share', 'Share')) ?>">
                 <i data-lucide="share-2" class="w-4 h-4" aria-hidden="true"></i>
-                <span class="hidden sm:inline">Share</span>
             </button>
         </div>
     </div>

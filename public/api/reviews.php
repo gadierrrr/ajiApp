@@ -361,7 +361,7 @@ function renderReviewCard($review) {
             </div>
 
             <?php if ($review['is_own']): ?>
-            <button onclick="deleteReview(<?= $review['id'] ?>)"
+            <button data-action="deleteReview" data-action-args='[<?= $review['id'] ?>]'
                     class="text-gray-400 hover:text-red-500 p-1"
                     title="Delete review">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -405,7 +405,7 @@ function renderReviewCard($review) {
         <?php if (!empty($review['photos'])): ?>
         <div class="flex gap-2 mb-3 overflow-x-auto pb-2">
             <?php foreach ($review['photos'] as $photo): ?>
-            <button onclick="openPhotoModal('<?= h($photo['filename']) ?>', '<?= h($photo['caption'] ?? '') ?>')"
+            <button data-action="openPhotoModal" data-action-args='["<?= h($photo['filename']) ?>","<?= h($photo['caption'] ?? '') ?>"]'
                     class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden hover:opacity-90 transition-opacity">
                 <img src="/uploads/photos/thumbs/<?= h($photo['filename']) ?>"
                      alt="<?= h($photo['caption'] ?? 'Beach photo') ?>"
@@ -417,7 +417,7 @@ function renderReviewCard($review) {
 
         <!-- Actions -->
         <div class="flex items-center gap-4 pt-2 border-t border-gray-100">
-            <button onclick="voteReview(<?= $review['id'] ?>, this)"
+            <button data-action="voteReview" data-action-args='[<?= $review['id'] ?>,"__this__"]'
                     class="helpful-btn flex items-center gap-1.5 text-sm <?= $review['user_voted'] ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600' ?> transition-colors"
                     data-voted="<?= $review['user_voted'] ? 'true' : 'false' ?>">
                 <i data-lucide="thumbs-up" class="w-4 h-4"></i>
@@ -426,7 +426,7 @@ function renderReviewCard($review) {
                 <span class="helpful-count text-xs bg-gray-100 px-1.5 py-0.5 rounded-full"><?= $review['helpful_count'] ?></span>
                 <?php endif; ?>
             </button>
-            <button onclick="shareReview(<?= $review['id'] ?>)"
+            <button data-action="shareReview" data-action-args='[<?= $review['id'] ?>]'
                     class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
                 <i data-lucide="share-2" class="w-4 h-4"></i>
                 <span>Share</span>

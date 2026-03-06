@@ -24,9 +24,9 @@ if (!isAuthenticated()) {
     jsonResponse(['success' => false, 'error' => 'Authentication required'], 401);
 }
 
-// CSRF (only enforce when token exists; some flows may be cookie-only)
-$csrfToken = (string)($_POST['csrf_token'] ?? '');
-if ($csrfToken !== '' && !validateCsrf($csrfToken)) {
+// CSRF is required because this endpoint mutates authenticated user state.
+$csrfToken = trim((string) ($_POST['csrf_token'] ?? ''));
+if ($csrfToken === '' || !validateCsrf($csrfToken)) {
     jsonResponse(['success' => false, 'error' => 'Invalid request'], 403);
 }
 

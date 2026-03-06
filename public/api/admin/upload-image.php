@@ -124,12 +124,11 @@ function uploadImage()
         jsonResponse(['error' => 'File must be less than 10MB'], 400);
     }
 
-    // Validate MIME type
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    // Validate image signature and MIME type
+    $signature = detectImageSignature($file['tmp_name']);
+    $mimeType = (string) ($signature['mime'] ?? '');
 
-    if (!in_array($mimeType, ALLOWED_IMAGE_TYPES)) {
+    if ($signature === null || !in_array($mimeType, ALLOWED_IMAGE_TYPES, true)) {
         jsonResponse(['error' => 'Only JPEG, PNG, WebP, and GIF images are allowed'], 400);
     }
 
@@ -226,15 +225,21 @@ function deleteImage()
         jsonResponse(['error' => 'Image ID required'], 400);
     }
 
-    // Get image record
-    $image = queryOne('SELECT * FROM beach_images WHERE id = :id', [':id' => $imageId]);
+    // Get image record — fetch only needed columns to avoid leaking data
+    $image = queryOne('SELECT id, beach_id, filename, is_cover FROM beach_images WHERE id = :id', [':id' => $imageId]);
 
     if (!$image) {
         jsonResponse(['error' => 'Image not found'], 404);
     }
 
+    // Validate filename before filesystem operation (defense in depth)
+    $filename = (string) $image['filename'];
+    if ($filename === '' || str_contains($filename, '/') || str_contains($filename, '..')) {
+        jsonResponse(['error' => 'Invalid image record'], 400);
+    }
+
     // Delete files
-    deleteImageFiles($image['filename']);
+    deleteImageFiles($filename);
 
     // Delete database record
     execute('DELETE FROM beach_images WHERE id = :id', [':id' => $imageId]);
@@ -273,8 +278,17 @@ function reorderImages()
         jsonResponse(['error' => 'Beach ID and order required'], 400);
     }
 
-    // Parse order (comma-separated image IDs)
-    $imageIds = array_map('intval', explode(',', $order));
+    // Verify beach exists
+    $beach = queryOne('SELECT id FROM beaches WHERE id = :id', [':id' => $beachId]);
+    if (!$beach) {
+        jsonResponse(['error' => 'Beach not found'], 404);
+    }
+
+    // Parse order (comma-separated image IDs), filter out zero/invalid
+    $imageIds = array_filter(array_map('intval', explode(',', $order)));
+    if (empty($imageIds)) {
+        jsonResponse(['error' => 'No valid image IDs provided'], 400);
+    }
 
     $db = getDb();
 
@@ -338,8 +352,18 @@ function updateAltText()
         jsonResponse(['error' => 'Image ID required'], 400);
     }
 
+    // Strip HTML tags and limit length to prevent stored XSS / abuse
+    $altText = strip_tags($altText);
+    $altText = mb_substr($altText, 0, 500);
+
+    // Verify image exists before updating
+    $image = queryOne('SELECT id, beach_id FROM beach_images WHERE id = :id', [':id' => $imageId]);
+    if (!$image) {
+        jsonResponse(['error' => 'Image not found'], 404);
+    }
+
     execute('UPDATE beach_images SET alt_text = :alt_text WHERE id = :id', [
-        ':alt_text' => $altText ?: null,
+        ':alt_text' => $altText !== '' ? $altText : null,
         ':id' => $imageId
     ]);
 
