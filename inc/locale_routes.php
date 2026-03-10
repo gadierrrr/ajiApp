@@ -309,6 +309,56 @@ function localeRoutes(): array
             'script' => '/privacy.php',
             'indexable' => false,
         ],
+
+        // ── Multi-category discovery routes ────────────────────────────
+        'explore' => [
+            'en' => '/explore',
+            'es' => '/es/explorar',
+            'script' => '/explore.php',
+            'indexable' => true,
+            'changefreq' => 'daily',
+            'priority' => '0.9',
+        ],
+        'best_rivers' => [
+            'en' => '/best-rivers',
+            'es' => '/es/mejores-rios',
+            'script' => '/best-rivers.php',
+            'indexable' => true,
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
+        ],
+        'best_waterfalls' => [
+            'en' => '/best-waterfalls',
+            'es' => '/es/mejores-cascadas',
+            'script' => '/best-waterfalls.php',
+            'indexable' => true,
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
+        ],
+        'best_trails' => [
+            'en' => '/best-trails',
+            'es' => '/es/mejores-senderos',
+            'script' => '/best-trails.php',
+            'indexable' => true,
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
+        ],
+        'best_restaurants' => [
+            'en' => '/best-restaurants',
+            'es' => '/es/mejores-restaurantes',
+            'script' => '/best-restaurants.php',
+            'indexable' => true,
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
+        ],
+        'best_photo_spots' => [
+            'en' => '/best-photo-spots',
+            'es' => '/es/mejores-puntos-foto',
+            'script' => '/best-photo-spots.php',
+            'indexable' => true,
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
+        ],
     ];
 
     return $routes;
@@ -390,6 +440,33 @@ function localeRouteMatch(string $path): ?array
         ];
     }
 
+    // ── Dynamic routes for non-beach place types ────────────────────
+    $placeTypeRoutes = [
+        'river'      => ['en' => 'river',      'es' => 'rio'],
+        'waterfall'  => ['en' => 'waterfall',   'es' => 'cascada'],
+        'trail'      => ['en' => 'trail',       'es' => 'sendero'],
+        'restaurant' => ['en' => 'restaurant',  'es' => 'restaurante'],
+        'photo_spot' => ['en' => 'photo-spot',  'es' => 'punto-foto'],
+    ];
+    foreach ($placeTypeRoutes as $typeKey => $prefixes) {
+        if (preg_match('#^/' . preg_quote($prefixes['en'], '#') . '/([a-z0-9-]+)$#', $path, $matches)) {
+            return [
+                'route_key' => 'place_detail',
+                'locale' => 'en',
+                'params' => ['type' => $typeKey, 'slug' => $matches[1]],
+                'indexable' => true,
+            ];
+        }
+        if (preg_match('#^/es/' . preg_quote($prefixes['es'], '#') . '/([a-z0-9-]+)$#', $path, $matches)) {
+            return [
+                'route_key' => 'place_detail',
+                'locale' => 'es',
+                'params' => ['type' => $typeKey, 'slug' => $matches[1]],
+                'indexable' => true,
+            ];
+        }
+    }
+
     return null;
 }
 
@@ -423,6 +500,26 @@ function routeUrl(string $routeKey, string $locale = 'en', array $params = []): 
         return $locale === 'es'
             ? '/es/playas-en-' . $municipality
             : '/beaches-in-' . $municipality;
+    }
+
+    // Generic place detail route for non-beach types
+    if ($routeKey === 'place_detail') {
+        $typeKey = trim((string) ($params['type'] ?? ''));
+        $slug = trim((string) ($params['slug'] ?? ''));
+        if ($typeKey === '' || $slug === '') {
+            return $locale === 'es' ? '/es' : '/';
+        }
+        $placeTypeRoutes = [
+            'river'      => ['en' => 'river',      'es' => 'rio'],
+            'waterfall'  => ['en' => 'waterfall',   'es' => 'cascada'],
+            'trail'      => ['en' => 'trail',       'es' => 'sendero'],
+            'restaurant' => ['en' => 'restaurant',  'es' => 'restaurante'],
+            'photo_spot' => ['en' => 'photo-spot',  'es' => 'punto-foto'],
+        ];
+        $prefix = $placeTypeRoutes[$typeKey][$locale] ?? $typeKey;
+        return $locale === 'es'
+            ? '/es/' . $prefix . '/' . $slug
+            : '/' . $prefix . '/' . $slug;
     }
 
     return $locale === 'es' ? '/es' : '/';
@@ -575,6 +672,17 @@ function resolvePublicScriptFromLocalizedPath(string $path): ?array
         return [
             'script' => '/municipality.php',
             'query' => ['m' => (string) ($params['municipality'] ?? '')],
+        ];
+    }
+
+    // Generic place detail for non-beach types
+    if ($routeKey === 'place_detail') {
+        return [
+            'script' => '/place.php',
+            'query' => [
+                'type' => (string) ($params['type'] ?? ''),
+                'slug' => (string) ($params['slug'] ?? ''),
+            ],
         ];
     }
 

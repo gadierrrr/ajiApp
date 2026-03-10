@@ -133,4 +133,51 @@ foreach ($municipalities as $municipality):
     </url>
 <?php endforeach; ?>
 
+    <!-- Non-Beach Place Pages -->
+<?php
+require_once APP_ROOT . '/inc/place_types.php';
+
+$placeTypeRoutes = [
+    'river'      => ['en' => 'river',      'es' => 'rio'],
+    'waterfall'  => ['en' => 'waterfall',   'es' => 'cascada'],
+    'trail'      => ['en' => 'trail',       'es' => 'sendero'],
+    'restaurant' => ['en' => 'restaurant',  'es' => 'restaurante'],
+    'photo_spot' => ['en' => 'photo-spot',  'es' => 'punto-foto'],
+];
+
+foreach ($placeTypeRoutes as $typeKey => $prefixes):
+    $table = PLACE_TYPES[$typeKey]['table'] ?? null;
+    if (!$table) continue;
+    $places = query("SELECT slug, name, cover_image, updated_at FROM {$table} WHERE publish_status = 'published' ORDER BY name");
+    if (!$places) continue;
+
+    foreach ($places as $p):
+        $placeLastmod = $p['updated_at'] ? date('Y-m-d', strtotime($p['updated_at'])) : $fallbackDate;
+        $placeImageUrl = (!empty($p['cover_image']) && strpos($p['cover_image'], 'http') === 0)
+            ? $p['cover_image']
+            : $appUrl . ($p['cover_image'] ?? '');
+?>
+    <url>
+        <loc><?= h($appUrl) ?>/<?= h($prefixes['en']) ?>/<?= h($p['slug']) ?></loc>
+        <lastmod><?= $placeLastmod ?></lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+        <?php if (!empty($p['cover_image']) && strpos($p['cover_image'], 'placeholder') === false): ?>
+        <image:image>
+            <image:loc><?= h($placeImageUrl) ?></image:loc>
+            <image:title><?= h($p['name']) ?></image:title>
+        </image:image>
+        <?php endif; ?>
+    </url>
+    <url>
+        <loc><?= h($appUrl) ?>/es/<?= h($prefixes['es']) ?>/<?= h($p['slug']) ?></loc>
+        <lastmod><?= $placeLastmod ?></lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+<?php
+    endforeach;
+endforeach;
+?>
+
 </urlset>

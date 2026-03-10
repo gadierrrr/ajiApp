@@ -31,6 +31,7 @@ const ENV_SCHEMA = [
     'UMAMI_SCRIPT_URL' => ['required' => false, 'type' => 'url'],
     'UMAMI_WEBSITE_ID' => ['required' => false, 'type' => 'string'],
     'UMAMI_DOMAINS' => ['required' => false, 'type' => 'string'],
+    'BACKUP_ENCRYPTION_KEY' => ['required' => false, 'type' => 'string'],
 ];
 
 function envFilePath(): string {

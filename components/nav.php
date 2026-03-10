@@ -1,4 +1,6 @@
 <?php
+require_once APP_ROOT . '/inc/place_types.php';
+require_once APP_ROOT . '/inc/place_helpers.php';
 $appName = $appName ?? ($_ENV['APP_NAME'] ?? 'Beach Finder');
 $currentLang = $currentLang ?? getCurrentLanguage();
 $user = $user ?? currentUser();
@@ -87,6 +89,47 @@ if (!is_string($navMapHref) || $navMapHref === '') {
                         <a href="<?= h($homeAnchorHref('beaches')) ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-brand-yellow hover:bg-white/5 transition-colors">
                             <i data-lucide="compass" class="w-4 h-4"></i>
                             <span><?= h(__('nav.view_all_beaches')) ?></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Explore Dropdown -->
+            <div class="relative" id="explore-dropdown">
+                <button type="button"
+                        data-action="toggleExploreDropdown"
+                        class="flex items-center gap-1 text-sm text-white/80 hover:text-brand-yellow px-4 py-1 transition-colors"
+                        role="menuitem"
+                        aria-expanded="false"
+                        aria-haspopup="true">
+                    <span><?= h(__('nav.explore', [], 'Explore')) ?></span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                </button>
+                <div id="explore-dropdown-menu" class="hidden absolute left-0 top-full mt-3 w-56 bg-brand-dark/95 backdrop-blur-md rounded-xl shadow-glass border border-white/10 py-2 z-50">
+                    <a href="<?= h(routeUrl('best_rivers', $currentLang)) ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-brand-yellow hover:bg-white/5 transition-colors">
+                        <span class="text-lg"><?= PLACE_TYPES['river']['emoji'] ?></span>
+                        <span><?= h(getPlaceLabelPlural('river', $currentLang)) ?></span>
+                    </a>
+                    <a href="<?= h(routeUrl('best_waterfalls', $currentLang)) ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-brand-yellow hover:bg-white/5 transition-colors">
+                        <span class="text-lg"><?= PLACE_TYPES['waterfall']['emoji'] ?></span>
+                        <span><?= h(getPlaceLabelPlural('waterfall', $currentLang)) ?></span>
+                    </a>
+                    <a href="<?= h(routeUrl('best_trails', $currentLang)) ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-brand-yellow hover:bg-white/5 transition-colors">
+                        <span class="text-lg"><?= PLACE_TYPES['trail']['emoji'] ?></span>
+                        <span><?= h(getPlaceLabelPlural('trail', $currentLang)) ?></span>
+                    </a>
+                    <a href="<?= h(routeUrl('best_restaurants', $currentLang)) ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-brand-yellow hover:bg-white/5 transition-colors">
+                        <span class="text-lg"><?= PLACE_TYPES['restaurant']['emoji'] ?></span>
+                        <span><?= h(getPlaceLabelPlural('restaurant', $currentLang)) ?></span>
+                    </a>
+                    <a href="<?= h(routeUrl('best_photo_spots', $currentLang)) ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-brand-yellow hover:bg-white/5 transition-colors">
+                        <span class="text-lg"><?= PLACE_TYPES['photo_spot']['emoji'] ?></span>
+                        <span><?= h(getPlaceLabelPlural('photo_spot', $currentLang)) ?></span>
+                    </a>
+                    <div class="border-t border-white/10 mt-2 pt-2">
+                        <a href="<?= h(routeUrl('explore', $currentLang)) ?>" class="flex items-center gap-3 px-4 py-2.5 text-sm text-brand-yellow hover:bg-white/5 transition-colors">
+                            <i data-lucide="compass" class="w-4 h-4"></i>
+                            <span><?= h(__('nav.explore_all', [], 'Explore All')) ?></span>
                         </a>
                     </div>
                 </div>

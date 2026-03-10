@@ -759,3 +759,137 @@ function collectionPageSchema(string $title, string $description, array $beaches
 
     return '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
 }
+
+/**
+ * Generate structured data for any non-beach place type.
+ * Dispatches to appropriate schema.org type based on place_type.
+ *
+ * @param array $place Place data with place_type field
+ * @param array|null $reviews Optional reviews
+ * @return string JSON-LD script tag
+ */
+function placeSchema(array $place, ?array $reviews = null): string {
+    require_once __DIR__ . '/../inc/place_types.php';
+    require_once __DIR__ . '/../inc/place_helpers.php';
+
+    $appUrl = getPublicBaseUrl();
+    $type = $place['place_type'] ?? 'beach';
+    $config = getPlaceTypeConfig($type);
+    if (!$config) return '';
+
+    $lang = function_exists('getCurrentLanguage') ? getCurrentLanguage() : 'en';
+    $desc = ($lang === 'es' && !empty($place['description_es']))
+        ? $place['description_es']
+        : ($place['description'] ?? '');
+    $placeUrl = $appUrl . getPlaceUrl($place, $lang);
+    $schemaTypes = $config['schema_type'] ?? ['TouristAttraction'];
+
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type' => count($schemaTypes) === 1 ? $schemaTypes[0] : $schemaTypes,
+        '@id' => $placeUrl,
+        'name' => $place['name'],
+        'description' => $desc ?: "{$place['name']} in {$place['municipality']}, Puerto Rico.",
+        'url' => $placeUrl,
+        'isAccessibleForFree' => ($type !== 'restaurant'),
+        'publicAccess' => true,
+    ];
+
+    if (!empty($place['lat']) && !empty($place['lng'])) {
+        $schema['geo'] = [
+            '@type' => 'GeoCoordinates',
+            'latitude' => $place['lat'],
+            'longitude' => $place['lng'],
+        ];
+    }
+
+    if (!empty($place['municipality'])) {
+        $schema['address'] = [
+            '@type' => 'PostalAddress',
+            'addressLocality' => $place['municipality'],
+            'addressRegion' => 'PR',
+            'addressCountry' => 'US',
+        ];
+    }
+
+    if (!empty($place['cover_image'])) {
+        $schema['image'] = imageObjectSchema($place['cover_image'], $place['name']);
+    }
+
+    $rating = getRatingSchema($place);
+    if ($rating) {
+        $schema['aggregateRating'] = $rating;
+    }
+
+    if ($type === 'restaurant') {
+        if (!empty($place['price_range'])) $schema['priceRange'] = $place['price_range'];
+        if (!empty($place['cuisine_type'])) $schema['servesCuisine'] = $place['cuisine_type'];
+        if (!empty($place['phone'])) $schema['telephone'] = $place['phone'];
+    }
+
+    if (!empty($reviews)) {
+        $reviewItems = [];
+        foreach ($reviews as $review) {
+            $reviewItems[] = [
+                '@type' => 'Review',
+                'reviewRating' => [
+                    '@type' => 'Rating',
+                    'ratingValue' => $review['rating'],
+                    'bestRating' => 5,
+                    'worstRating' => 1,
+                ],
+                'author' => [
+                    '@type' => 'Person',
+                    'name' => $review['user_name'] ?? 'Anonymous',
+                ],
+                'reviewBody' => $review['review_text'] ?? '',
+                'datePublished' => $review['created_at'] ?? date('Y-m-d'),
+            ];
+        }
+        $schema['review'] = $reviewItems;
+    }
+
+    return '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+}
+
+/**
+ * Generate CollectionPage schema for any place type.
+ */
+function placeCollectionSchema(string $title, string $description, array $places, string $placeType = 'beach'): string {
+    require_once __DIR__ . '/../inc/place_types.php';
+    require_once __DIR__ . '/../inc/place_helpers.php';
+
+    $appUrl = getPublicBaseUrl();
+    $config = getPlaceTypeConfig($placeType);
+    $schemaTypes = $config['schema_type'] ?? ['TouristAttraction'];
+    $itemType = is_array($schemaTypes) ? $schemaTypes[0] : $schemaTypes;
+
+    $items = [];
+    foreach (array_slice($places, 0, 20) as $index => $p) {
+        $p['place_type'] = $placeType;
+        $items[] = [
+            '@type' => 'ListItem',
+            'position' => $index + 1,
+            'item' => [
+                '@type' => $itemType,
+                'name' => $p['name'],
+                'url' => $appUrl . getPlaceUrl($p),
+                'description' => mb_substr($p['description'] ?? '', 0, 150),
+            ],
+        ];
+    }
+
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'CollectionPage',
+        'name' => $title,
+        'description' => $description,
+        'mainEntity' => [
+            '@type' => 'ItemList',
+            'numberOfItems' => count($places),
+            'itemListElement' => $items,
+        ],
+    ];
+
+    return '<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+}
