@@ -1,7 +1,7 @@
 <?php
 require_once APP_ROOT . '/inc/place_types.php';
 require_once APP_ROOT . '/inc/place_helpers.php';
-$appName = $appName ?? ($_ENV['APP_NAME'] ?? 'Beach Finder');
+$appName = $appName ?? ($_ENV['APP_NAME'] ?? 'AJI');
 $currentLang = $currentLang ?? getCurrentLanguage();
 $user = $user ?? currentUser();
 $localizedHome = routeUrl('home', $currentLang);

@@ -80,7 +80,7 @@ function emailProviderMode(): string {
 
 function emailGetFromParts(array $options = []): array {
     $appUrl = (string) env('APP_URL', 'https://puertoricobeachfinder.com');
-    $appName = (string) env('APP_NAME', 'Beach Finder');
+    $appName = (string) env('APP_NAME', 'AJI');
     $domain = parse_url($appUrl, PHP_URL_HOST) ?: 'puertoricobeachfinder.com';
     if (str_starts_with($domain, 'www.')) {
         $domain = substr($domain, 4);
@@ -248,7 +248,7 @@ function emailSendInternal(string $to, string $subject, string $html, array $opt
 
     // Keep Plunk contact profile in sync (best effort)
     $contactAttrs = [
-        'source' => 'beach_finder',
+        'source' => 'aji_app',
         'last_email_template' => (string) ($templateSlug ?? ''),
         'last_email_category' => $category,
         'last_email_subject' => mb_substr($subject, 0, 120),
@@ -342,7 +342,7 @@ function sendTemplateEmail($slug, $to, $variables = []) {
     }
 
     $appUrl = (string) env('APP_URL', 'https://www.puertoricobeachfinder.com');
-    $appName = (string) env('APP_NAME', 'Puerto Rico Beach Finder');
+    $appName = (string) env('APP_NAME', 'AJI');
 
     $vars = array_merge([
         'app_url' => $appUrl,
@@ -394,7 +394,7 @@ function sendWelcomeEmail($email, $name, $preferences = []) {
     }
 
     $appUrl = (string) env('APP_URL', 'https://www.puertoricobeachfinder.com');
-    $appName = (string) env('APP_NAME', 'Puerto Rico Beach Finder');
+    $appName = (string) env('APP_NAME', 'AJI');
 
     $subject = 'Welcome to ' . $appName . '!';
     $html = '<!doctype html><html><body style="font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;padding:24px">'

@@ -7,7 +7,7 @@
     <footer class="bg-brand-darker border-t border-brand-yellow/80 py-8 px-4 sm:px-6 mt-auto">
         <div class="max-w-7xl mx-auto text-center">
             <p class="text-xs text-gray-600">
-                &copy; <?= date('Y') ?> <?= h($_ENV['APP_NAME'] ?? 'Beach Finder') ?>. <?= h(__('footer.copyright')) ?>
+                &copy; <?= date('Y') ?> <?= h($_ENV['APP_NAME'] ?? 'AJI') ?>. <?= h(__('footer.copyright')) ?>
             </p>
         </div>
     </footer>

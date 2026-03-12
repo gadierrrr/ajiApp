@@ -28,7 +28,7 @@ $homeAnchorHref = static function (string $anchor) use ($homePath): string {
                 <div>
                     <div class="flex items-center gap-2 mb-6">
                         <i data-lucide="sun" class="w-6 h-6 text-brand-yellow"></i>
-                        <span class="text-xl font-bold text-white"><?= h($_ENV['APP_NAME'] ?? 'Beach Finder') ?></span>
+                        <span class="text-xl font-bold text-white"><?= h($_ENV['APP_NAME'] ?? 'AJI') ?></span>
                     </div>
                     <p class="text-gray-400 text-sm mb-4">
                         <?= h(__('footer.about', ['count' => '300+'])) ?>
@@ -124,6 +124,25 @@ $homeAnchorHref = static function (string $anchor) use ($homePath): string {
                         <li><a href="<?= h(routeUrl('guide_family_planning', $currentLang)) ?>" class="text-gray-400 hover:text-brand-yellow transition-colors"><?= h(__('footer.family_planning')) ?></a></li>
                     </ul>
 
+                    <!-- Explore More -->
+                    <div class="mt-6">
+                        <h5 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"><?= h(__('footer.explore_more')) ?></h5>
+                        <ul class="space-y-2 text-sm">
+                            <li><a href="<?= h(routeUrl('best_trails', $currentLang)) ?>" class="text-gray-400 hover:text-brand-yellow transition-colors flex items-center gap-2">
+                                <i data-lucide="mountain" class="w-4 h-4"></i>
+                                <?= h(__('footer.best_trails')) ?>
+                            </a></li>
+                            <li><a href="<?= h(routeUrl('best_rivers', $currentLang)) ?>" class="text-gray-400 hover:text-brand-yellow transition-colors flex items-center gap-2">
+                                <i data-lucide="droplets" class="w-4 h-4"></i>
+                                <?= h(__('footer.best_rivers')) ?>
+                            </a></li>
+                            <li><a href="<?= h(routeUrl('best_waterfalls', $currentLang)) ?>" class="text-gray-400 hover:text-brand-yellow transition-colors flex items-center gap-2">
+                                <i data-lucide="cloud-rain" class="w-4 h-4"></i>
+                                <?= h(__('footer.best_waterfalls')) ?>
+                            </a></li>
+                        </ul>
+                    </div>
+
                     <?php if (isAuthenticated()): ?>
                     <!-- Authenticated User -->
                     <div class="mt-6">
@@ -154,7 +173,7 @@ $homeAnchorHref = static function (string $anchor) use ($homePath): string {
             <!-- Copyright -->
             <div class="border-t border-white/5 pt-8 mt-12">
                 <p class="text-xs text-gray-400 text-center">
-                    &copy; <?= date('Y') ?> <?= h($_ENV['APP_NAME'] ?? 'Beach Finder') ?>. <?= h(__('footer.copyright')) ?>
+                    &copy; <?= date('Y') ?> <?= h($_ENV['APP_NAME'] ?? 'AJI') ?>. <?= h(__('footer.copyright')) ?>
                 </p>
             </div>
         </div>
@@ -236,7 +255,7 @@ $homeAnchorHref = static function (string $anchor) use ($homePath): string {
     ], JSON_UNESCAPED_UNICODE) ?>;
     </script>
     <script <?= cspNonceAttr() ?>>
-    window.BeachFinderMeta = {
+    window.AJIAppMeta = {
         authenticated: <?= isAuthenticated() ? '1' : '0' ?>,
         user_id: <?= isAuthenticated() ? json_encode((string)($_SESSION['user_id'] ?? '')) : 'null' ?>
     };

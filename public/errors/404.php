@@ -4,7 +4,7 @@ require_once APP_ROOT . '/inc/i18n.php';
 require_once APP_ROOT . '/inc/locale_routes.php';
 
 http_response_code(404);
-$appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
+$appName = $_ENV['APP_NAME'] ?? 'AJI';
 $currentLang = getCurrentLanguage();
 ?>
 <!doctype html>

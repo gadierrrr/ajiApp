@@ -234,7 +234,7 @@ function beachListSchema(array $beaches, string $listName = 'Puerto Rico Beaches
  */
 function organizationSchema(): string {
     $appUrl = getPublicBaseUrl();
-    $appName = $_ENV['APP_NAME'] ?? 'Puerto Rico Beach Finder';
+    $appName = $_ENV['APP_NAME'] ?? 'AJI';
 
     // Social media profiles - add/remove as needed
     $socialLinks = [
@@ -245,7 +245,7 @@ function organizationSchema(): string {
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
         'name' => $appName,
-        'alternateName' => 'PR Beach Finder',
+        'alternateName' => 'AJI',
         'url' => $appUrl,
         'logo' => [
             '@type' => 'ImageObject',
@@ -281,7 +281,7 @@ function organizationSchema(): string {
  */
 function websiteSchema(): string {
     $appUrl = getPublicBaseUrl();
-    $appName = $_ENV['APP_NAME'] ?? 'Puerto Rico Beach Finder';
+    $appName = $_ENV['APP_NAME'] ?? 'AJI';
 
     $schema = [
         '@context' => 'https://schema.org',
@@ -685,7 +685,7 @@ function speakableSchema(): string {
  */
 function articleSchema(string $title, string $description, string $url, ?string $image = null, ?string $datePublished = null): string {
     $appUrl = getPublicBaseUrl();
-    $appName = $_ENV['APP_NAME'] ?? 'Puerto Rico Beach Finder';
+    $appName = $_ENV['APP_NAME'] ?? 'AJI';
 
     // Backward compatibility: some callers historically passed date as arg #4.
     if ($datePublished === null && is_string($image) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $image)) {

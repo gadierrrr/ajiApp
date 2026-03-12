@@ -49,7 +49,7 @@ const urls = {
 function getSampleBeaches() {
     try {
         const output = execSync(
-            `sqlite3 /var/www/beach-finder/data/beach-finder.db "SELECT slug FROM beaches WHERE rating >= 4.0 ORDER BY RANDOM() LIMIT 12"`,
+            `sqlite3 /var/www/ajiApp/data/aji-app.db "SELECT slug FROM beaches WHERE rating >= 4.0 ORDER BY RANDOM() LIMIT 12"`,
             { encoding: 'utf8' }
         );
         return output.trim().split('\n').map(slug => `/beach.php?slug=${slug}`);
@@ -63,7 +63,7 @@ function getSampleBeaches() {
 function getSampleMunicipalities() {
     try {
         const output = execSync(
-            `sqlite3 /var/www/beach-finder/data/beach-finder.db "SELECT DISTINCT municipality FROM beaches ORDER BY RANDOM() LIMIT 6"`,
+            `sqlite3 /var/www/ajiApp/data/aji-app.db "SELECT DISTINCT municipality FROM beaches ORDER BY RANDOM() LIMIT 6"`,
             { encoding: 'utf8' }
         );
         return output.trim().split('\n').map(muni => `/municipality.php?name=${encodeURIComponent(muni)}`);

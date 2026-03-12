@@ -102,7 +102,7 @@ $userReviewCount = count($reviews);
 $avgUserRating = $beach['avg_user_rating'] ?? null;
 
 // Page metadata
-$pageTitle = $beach['name'] . ' - ' . $beach['municipality'] . ' | ' . ($lang === 'es' ? 'Playas de Puerto Rico' : 'Puerto Rico Beach Finder');
+$pageTitle = $beach['name'] . ' - ' . $beach['municipality'] . ' | ' . ($lang === 'es' ? 'Playas de Puerto Rico' : 'AJI');
 $_descSource = ($lang === 'es' && !empty($beach['description_es']))
     ? $beach['description_es']
     : ($beach['description'] ?? '');

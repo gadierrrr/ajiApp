@@ -5,7 +5,7 @@
  */
 
 require_once __DIR__ . '/../inc/session.php';
-if (isset($_COOKIE['BEACH_FINDER_SESSION']) && session_status() === PHP_SESSION_NONE) {
+if (isset($_COOKIE['AJI_APP_SESSION']) && session_status() === PHP_SESSION_NONE) {
     session_cache_limiter('');   // Prevent PHP from emitting Pragma/Expires
     session_start();
 }
@@ -15,7 +15,7 @@ require_once __DIR__ . '/../inc/i18n.php';
 require_once __DIR__ . '/../inc/locale_routes.php';
 
 $user = currentUser();
-$appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
+$appName = $_ENV['APP_NAME'] ?? 'AJI';
 $appUrl = getPublicBaseUrl();
 $currentLang = getCurrentLanguage();
 $allowedBodyVariants = ['default', 'collection-light', 'collection-dark'];
@@ -49,7 +49,7 @@ if ($bodyVariant === 'collection-light') {
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Beach Finder">
+    <meta name="apple-mobile-web-app-title" content="AJI">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/assets/icons/icon-152x152.png">
     <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -66,7 +66,7 @@ if ($bodyVariant === 'collection-light') {
     <meta property="og:image" content="<?= h($ogImage) ?>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="<?= isset($pageTitle) ? h($pageTitle) : 'Puerto Rico Beach' ?>">
+    <meta property="og:image:alt" content="<?= isset($pageTitle) ? h($pageTitle) : 'Puerto Rico' ?>">
     <?php else: ?>
     <meta property="og:image" content="<?= h($appUrl) ?>/assets/icons/icon-512x512.png">
     <meta property="og:image:width" content="512">
@@ -75,15 +75,15 @@ if ($bodyVariant === 'collection-light') {
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@PRBeachFinder">
-    <meta name="twitter:creator" content="@PRBeachFinder">
+    <meta name="twitter:site" content="@AJIApp">
+    <meta name="twitter:creator" content="@AJIApp">
     <meta name="twitter:title" content="<?= isset($pageTitle) ? h($pageTitle) : h($appName) ?>">
     <?php if (isset($pageDescription)): ?>
     <meta name="twitter:description" content="<?= h($pageDescription) ?>">
     <?php endif; ?>
     <?php if (isset($ogImage)): ?>
     <meta name="twitter:image" content="<?= h($ogImage) ?>">
-    <meta name="twitter:image:alt" content="<?= isset($pageTitle) ? h($pageTitle) : 'Puerto Rico Beach' ?>">
+    <meta name="twitter:image:alt" content="<?= isset($pageTitle) ? h($pageTitle) : 'Puerto Rico' ?>">
     <?php else: ?>
     <meta name="twitter:image" content="<?= h($appUrl) ?>/assets/icons/icon-512x512.png">
     <?php endif; ?>

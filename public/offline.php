@@ -13,7 +13,7 @@ $pageTitle = 'Offline';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline | Puerto Rico Beach Finder</title>
+    <title>Offline | AJI</title>
     <script src="https://cdn.tailwindcss.com" <?= cspNonceAttr() ?>></script>
     <style>
         .wave {

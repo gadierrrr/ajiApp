@@ -122,9 +122,9 @@ if ($failed) {
         echo "   - $name\n";
     }
     echo "\nThese may have different names in the database. Check with:\n";
-    echo "sqlite3 data/beach-finder.db \"SELECT name FROM beaches WHERE name LIKE '%keyword%';\"\n";
+    echo "sqlite3 data/aji-app.db \"SELECT name FROM beaches WHERE name LIKE '%keyword%';\"\n";
 }
 
 echo "\nVerification:\n";
-echo "sqlite3 data/beach-finder.db \"SELECT name, lat, lng FROM beaches WHERE name LIKE '%Surfers%';\"\n";
-echo "sqlite3 data/beach-finder.db \"SELECT name, lat, lng FROM beaches WHERE name LIKE '%Gas Chambers%';\"\n";
+echo "sqlite3 data/aji-app.db \"SELECT name, lat, lng FROM beaches WHERE name LIKE '%Surfers%';\"\n";
+echo "sqlite3 data/aji-app.db \"SELECT name, lat, lng FROM beaches WHERE name LIKE '%Gas Chambers%';\"\n";

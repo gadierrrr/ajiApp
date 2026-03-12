@@ -1,11 +1,11 @@
 /**
- * Beach Finder Service Worker
+ * AJI App Service Worker
  * Handles offline caching and background sync
  */
 
 const CACHE_VERSION = 'v1.1.2';
-const CACHE_NAME = `beach-finder-${CACHE_VERSION}`;
-const DATA_CACHE_NAME = `beach-finder-data-${CACHE_VERSION}`;
+const CACHE_NAME = `aji-app-${CACHE_VERSION}`;
+const DATA_CACHE_NAME = `aji-app-data-${CACHE_VERSION}`;
 
 // Assets to cache immediately on install
 const PRECACHE_ASSETS = [
@@ -57,7 +57,7 @@ self.addEventListener('activate', (event) => {
             .then((cacheNames) => {
                 return Promise.all(
                     cacheNames
-                        .filter((name) => name.startsWith('beach-finder-') && !currentCaches.includes(name))
+                        .filter((name) => name.startsWith('aji-app-') && !currentCaches.includes(name))
                         .map((name) => caches.delete(name))
                 );
             })
@@ -243,7 +243,7 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
 
     event.waitUntil(
-        self.registration.showNotification(data.title || 'Beach Finder', {
+        self.registration.showNotification(data.title || 'AJI', {
             body: data.body || '',
             icon: '/assets/icons/icon-192x192.png',
             badge: '/assets/icons/icon-96x96.png',

@@ -8,7 +8,7 @@ $surf = $place['surf'] ?? null;
 $wind = $place['wind'] ?? null;
 
 if ($sargassum || $surf || $wind): ?>
-<div class="flex items-center gap-3 mt-3 text-xs text-gray-500 dark:text-gray-400">
+<div class="flex items-center gap-3 mt-3 text-xs text-white/70">
     <?php if ($surf): ?>
     <span class="inline-flex items-center gap-1" title="Surf: <?= h(getConditionLabel('surf', $surf)) ?>">
         <i data-lucide="waves" class="w-3.5 h-3.5"></i>
@@ -22,7 +22,7 @@ if ($sargassum || $surf || $wind): ?>
     </span>
     <?php endif; ?>
     <?php if ($sargassum && $sargassum !== 'none'): ?>
-    <span class="inline-flex items-center gap-1 <?= $sargassum === 'heavy' ? 'text-orange-500' : '' ?>" title="Sargassum: <?= h(getConditionLabel('sargassum', $sargassum)) ?>">
+    <span class="inline-flex items-center gap-1 <?= $sargassum === 'heavy' ? 'text-orange-400' : '' ?>" title="Sargassum: <?= h(getConditionLabel('sargassum', $sargassum)) ?>">
         <i data-lucide="leaf" class="w-3.5 h-3.5"></i>
         <?= h(getConditionLabel('sargassum', $sargassum)) ?>
     </span>
@@ -31,7 +31,7 @@ if ($sargassum || $surf || $wind): ?>
 <?php endif; ?>
 <?php if (!empty($place['has_lifeguard'])): ?>
 <div class="mt-2">
-    <span class="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+    <span class="inline-flex items-center gap-1 text-xs text-green-400">
         <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
         Lifeguard
     </span>

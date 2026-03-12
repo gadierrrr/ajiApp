@@ -69,7 +69,7 @@ function getRedirectedUrl($url) {
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS => 5,
         CURLOPT_TIMEOUT => 10,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; BeachFinder/1.0)'
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; AJIApp/1.0)'
     ]);
     curl_exec($ch);
     $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
@@ -207,7 +207,7 @@ function downloadPlacePhoto($photoReference, $apiKey, $maxWidth = 1200) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_TIMEOUT => 30,
-        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; BeachFinder/1.0)'
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; AJIApp/1.0)'
     ]);
 
     $imageData = curl_exec($ch);

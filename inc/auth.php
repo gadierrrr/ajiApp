@@ -56,7 +56,7 @@ function sendMagicLink($email) {
 
     // Send email
     $appUrl = $_ENV['APP_URL'] ?? 'http://localhost:8082';
-    $appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
+    $appName = $_ENV['APP_NAME'] ?? 'AJI';
     $loginUrl = $appUrl . '/verify?token=' . $token;
 
     // Try to use database template first

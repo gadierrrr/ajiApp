@@ -17,7 +17,7 @@ BEACHES=(
 )
 
 BASE_URL="https://www.puertoricobeachfinder.com"
-RESULTS_DIR="/var/www/beach-finder/audit-results"
+RESULTS_DIR="/var/www/ajiApp/audit-results"
 TIMESTAMP="2026-02-03T11-15-49"
 
 echo "🏖️  Auditing ${#BEACHES[@]} beach detail pages..."

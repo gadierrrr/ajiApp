@@ -34,7 +34,7 @@ function fetchHtml(string $url, int $timeout): array {
             'method' => 'GET',
             'timeout' => $timeout,
             'ignore_errors' => true,
-            'header' => "User-Agent: beach-finder-ci-analytics-check/1.0\r\nAccept: text/html\r\n",
+            'header' => "User-Agent: aji-app-ci-analytics-check/1.0\r\nAccept: text/html\r\n",
         ],
     ]);
 

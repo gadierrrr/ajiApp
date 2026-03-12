@@ -1,212 +1,96 @@
-# Puerto Rico Beach Finder
+# AJI - Explore Puerto Rico
 
-A PHP + SQLite web application for exploring beaches in Puerto Rico.
+Discover beaches, rivers, waterfalls, trails, restaurants, and photo spots across Puerto Rico. AJI is a bilingual (EN/ES) web app that helps locals and travelers find the best outdoor experiences on the island.
 
-## Local setup
+## Features
 
-1. Copy environment template and configure values:
+- **Multi-category discovery** — Browse 468+ beaches, rivers, waterfalls, trails, restaurants, and photo spots
+- **Interactive maps** — Explore places with Google Maps integration and geolocation
+- **Smart filters** — Filter by activity, amenity, municipality, and conditions
+- **Personalization quiz** — Get matched to places based on your preferences
+- **Favorites & lists** — Save places and email curated lists to yourself
+- **Bilingual** — Full English and Spanish support
+- **PWA-ready** — Installable with offline support
+- **Dark mode** — Automatic and manual theme switching
+
+## Tech Stack
+
+- **Backend:** PHP 8.x (no framework)
+- **Database:** SQLite3 with WAL mode
+- **Frontend:** HTMX + vanilla JavaScript
+- **CSS:** Tailwind CSS 3.x + custom design tokens
+- **Auth:** Google OAuth + magic links
+- **Email:** Plunk transactional email
+- **Analytics:** Umami (privacy-friendly)
+- **Icons:** Lucide
+
+## Getting Started
 
 ```bash
+# 1. Clone and configure
 cp .env.example .env
-```
+# Edit .env with your API keys
 
-2. Install frontend dependencies:
-
-```bash
+# 2. Install dependencies
 npm ci
-```
 
-3. Build frontend assets:
-
-```bash
+# 3. Build assets
 npm run build
-```
 
-4. Initialize database (first run only):
-
-```bash
+# 4. Initialize database
 php scripts/init-db.php
-```
 
-5. Run migrations:
-
-```bash
-php scripts/migrate.php
-```
-
-## Local development
-
-Run with the built-in PHP server using the `public/` docroot:
-
-```bash
-php -S localhost:8082 -t public scripts/dev-router.php
-```
-
-## Required environment variables
-
-Defined in `.env.example`:
-
-- `DB_PATH`
-- `APP_URL`
-- `APP_NAME`
-- `GOOGLE_MAPS_API_KEY`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `PLUNK_SECRET_KEY`
-- `PLUNK_PUBLIC_KEY`
-- `PLUNK_BASE_URL`
-- `PLUNK_WEBHOOK_SECRET`
-- `PLUNK_WEBHOOK_EXPECT_ENV` (optional: `dev`, `staging`, `prod`)
-- `EMAIL_PROVIDER` (`plunk`)
-- `ANTHROPIC_API_KEY`
-- `REFERRAL_ALLOWED_HOSTS`
-- `BACKUP_DIR` (default: `./backups/db`)
-- `BACKUP_KEEP_DAYS` (default: `30`)
-- `APP_ENV` (`dev`, `staging`, `prod`)
-- `APP_DEBUG` (`0` or `1`)
-- Umami analytics (optional):
-  - `UMAMI_ENABLED` (`0` or `1`)
-  - `UMAMI_SCRIPT_URL` (default: `https://cloud.umami.is/script.js`)
-  - `UMAMI_WEBSITE_ID`
-  - `UMAMI_DOMAINS` (optional)
-
-## Funnel + analytics notes
-
-This codebase includes a lightweight funnel implementation and Umami-compatible client tracking:
-
-- Quiz:
-  - `/quiz` returns a `results_token` from `public/api/quiz/match.php` and can generate a shareable URL.
-  - `/quiz-results?token=...` renders stored quiz matches (tokenized pages are `noindex`).
-- Lead capture:
-  - List pages can post to `public/api/send-list.php` ("Send me this list").
-  - Quiz results can post to `public/api/send-quiz-results.php` ("Send my matches").
-  - Email delivery uses Plunk API keys.
-  - Webhook receiver: `public/api/webhooks/plunk.php`
-  - Set a per-environment webhook URL such as `/api/webhooks/plunk.php?env=prod` in production and `/api/webhooks/plunk.php?env=staging` in staging.
-  - Use a distinct `PLUNK_WEBHOOK_SECRET` for each environment and set `PLUNK_WEBHOOK_EXPECT_ENV` to the matching environment tag.
-  - Email health probe: `public/api/health/email.php`
-- Tracking:
-  - `public/assets/js/analytics.js` defines `window.bfTrack()` and forwards events to Umami when available.
-  - `public/assets/js/plunk-client.js` bridges `window.bfTrack()` events to Plunk `/v1/track` using `PLUNK_PUBLIC_KEY`.
-  - Event naming follows the funnel schema (A1/A2/A3, L1/L2, S1/S2, U1...).
-  - See `docs/analytics-umami.md` for the event map and implementation details.
-
-## Email health check
-
-Use the email provider probe endpoint to validate Plunk config/connectivity:
-
-```bash
-curl -sS -i https://www.puertoricobeachfinder.com/api/health/email
-```
-
-Expected:
-- `200` when keys are configured and Plunk is reachable/authenticated
-- `503` when config/auth/connectivity is unhealthy
-
-Operational runbook:
-- `docs/email-plunk.md`
-
-## Analytics health checks
-
-Use the analytics probe endpoint to validate Umami config and rendered script injection:
-
-```bash
-curl -sS "https://www.puertoricobeachfinder.com/api/health/analytics.php?page_probe=1&network_probe=1"
-```
-
-Guardrail check for rendered HTML:
-
-```bash
-php scripts/check-analytics-umami.php --url=https://www.puertoricobeachfinder.com
-```
-
-Synthetic browser probe (headless Chrome/Chromium required):
-
-```bash
-scripts/synthetic-analytics-probe.sh https://www.puertoricobeachfinder.com
-```
-
-Operational runbook:
-- `docs/analytics-umami.md`
-
-## Migration commands
-
-```bash
-# List pending automatic migrations
-php scripts/migrate.php --dry-run
-
-# Apply pending automatic migrations
+# 5. Run migrations
 php scripts/migrate.php
 
-# Fail if pending migrations exist
-php scripts/migrate.php --check
-
-# One-time baseline for existing DBs
-php scripts/migrate.php --baseline
-
-# Include manual/data migrations (default excludes manual set)
-php scripts/migrate.php --include-manual
+# 6. Start dev server
+php -S localhost:8084 -t public scripts/dev-router.php
 ```
 
-## Deploy command
+## Environment Variables
 
-Use the unified deploy script:
+See `.env.example` for the full list. Key variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `DB_PATH` | SQLite database path |
+| `APP_URL` | Base URL for the app |
+| `GOOGLE_MAPS_API_KEY` | Google Maps JavaScript API |
+| `GOOGLE_CLIENT_ID/SECRET` | Google OAuth credentials |
+| `PLUNK_SECRET_KEY` | Transactional email via Plunk |
+| `UMAMI_WEBSITE_ID` | Analytics tracking (optional) |
+
+## Project Structure
+
+```
+public/          # Web document root (Nginx serves this)
+  api/           # JSON/HTML API endpoints (HTMX)
+  admin/         # Admin panel
+  assets/        # CSS, JS, images, icons
+  guides/        # Editorial guide pages
+components/      # Reusable PHP UI components
+inc/             # Core includes (db, helpers, auth, i18n)
+data/            # SQLite database
+migrations/      # Database migrations
+scripts/         # CLI tools and build scripts
+```
+
+## Development
 
 ```bash
+# Watch Tailwind during development
+npm run dev
+
+# Build all assets (CSS + JS)
+npm run build
+
+# Run database migrations
+php scripts/migrate.php
+
+# Deploy (lint + build + migrate + smoke tests)
 ./deploy.sh
 ```
 
-It runs:
+## License
 
-1. PHP syntax lint
-2. `npm ci`
-3. `npm run build`
-4. generated asset consistency check
-5. migrations (`php scripts/migrate.php`)
-6. smoke checks (migration check + secret grep)
-
-## Rollback notes
-
-1. Back up DB before deploy:
-
-```bash
-php scripts/backup-db.php
-```
-
-2. If deploy fails after migration:
-
-- Roll back application code to previous commit.
-- Restore DB backup.
-- Re-run `php scripts/migrate.php --check`.
-
-3. If migration runner was newly adopted on an existing DB:
-
-- Use `php scripts/migrate.php --baseline` once to mark already-applied migrations.
-
-## Backup automation
-
-Create a verified SQLite backup:
-
-```bash
-php scripts/backup-db.php
-```
-
-Run a restore smoke test against the latest backup:
-
-```bash
-php scripts/restore-smoke-test.php
-```
-
-Suggested daily automation:
-
-```bash
-0 3 * * * cd /var/www/beach-finder && php scripts/backup-db.php >> logs/backup-db.log 2>&1
-20 3 * * * cd /var/www/beach-finder && php scripts/restore-smoke-test.php >> logs/restore-smoke.log 2>&1
-```
-
-## Security operations
-
-- Secret scanning is enforced in CI and pre-commit (`gitleaks`).
-- Google key rotation checklist is documented in `docs/google-key-rotation.md`.
-- See `docs/secret-history-cleanup.md` for history rewrite runbook if secrets were previously committed.
-- Nginx hardening template lives at `deploy/nginx/beach-finder.conf`.
+All rights reserved.

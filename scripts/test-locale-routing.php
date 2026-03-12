@@ -135,7 +135,7 @@ if (isIndexableLocalePath('/definitely-not-a-real-route')) {
 }
 
 // Keep Nginx localized route config in sync with route map.
-$nginxConfigPath = APP_ROOT . '/deploy/nginx/beach-finder.conf';
+$nginxConfigPath = APP_ROOT . '/deploy/nginx/aji-app.conf';
 if (is_file($nginxConfigPath)) {
     $nginxConfig = (string) file_get_contents($nginxConfigPath);
     foreach (localeRoutes() as $routeKey => $route) {

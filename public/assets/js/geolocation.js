@@ -1,4 +1,4 @@
-// Geolocation functions for Beach Finder
+// Geolocation functions for AJI
 const GS = window.BF_STRINGS || {};
 
 function requestUserLocation() {

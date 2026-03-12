@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Puerto Rico Beach Finder is a PHP-based web application that provides a searchable database of 468 beaches across Puerto Rico. It uses SQLite for data storage, HTMX for dynamic interactions, and Tailwind CSS for styling.
+AJI is a PHP-based web application that provides a searchable database of 468 beaches across Puerto Rico. It uses SQLite for data storage, HTMX for dynamic interactions, and Tailwind CSS for styling.
 
 ## Common Commands
 
@@ -47,7 +47,7 @@ php scripts/migrate.php
 
 ### Technology Stack
 - **Backend:** PHP 8.x (no framework, procedural)
-- **Database:** SQLite3 with WAL mode (`data/beach-finder.db`)
+- **Database:** SQLite3 with WAL mode (`data/aji-app.db`)
 - **Frontend:** HTMX for dynamic updates, vanilla JavaScript
 - **CSS:** Tailwind CSS 3.x with custom "beach" color palette
 - **Icons:** Lucide icons
@@ -329,7 +329,7 @@ The `inc/` directory contains shared PHP includes. These files have include guar
 **Check error logs:**
 ```bash
 # Nginx errors (most useful for PHP fatals)
-tail -50 /var/log/nginx/beach-finder-error.log
+tail -50 /var/log/nginx/aji-app-error.log
 
 # Production domain errors
 tail -50 /var/log/nginx/puertoricobeachfinder-error.log

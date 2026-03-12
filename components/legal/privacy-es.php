@@ -4,7 +4,7 @@
 
     <div class="prose prose-slate max-w-none">
         <p>
-            Esta Política de Privacidad explica cómo Puerto Rico Beach Finder (el "Servicio") recopila, usa y comparte información.
+            Esta Política de Privacidad explica cómo AJI (el "Servicio") recopila, usa y comparte información.
         </p>
 
         <h2>Información que Recopilamos</h2>

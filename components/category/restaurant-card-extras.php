@@ -6,9 +6,9 @@ $priceRange = $place['price_range'] ?? null;
 $cuisineType = $place['cuisine_type'] ?? null;
 
 if ($priceRange || $cuisineType): ?>
-<div class="flex items-center gap-3 mt-3 text-xs text-gray-500 dark:text-gray-400">
+<div class="flex items-center gap-3 mt-3 text-xs text-white/70">
     <?php if ($priceRange): ?>
-    <span class="inline-flex items-center gap-1 font-semibold text-green-600 dark:text-green-400">
+    <span class="inline-flex items-center gap-1 font-semibold text-green-400">
         <?= h($priceRange) ?>
     </span>
     <?php endif; ?>

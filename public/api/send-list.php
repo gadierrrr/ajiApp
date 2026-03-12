@@ -134,7 +134,7 @@ $html = <<<HTML
         <p style="margin:0 0 14px;color:#94a3b8;">Open this page again anytime:</p>
         <p style="margin:0 0 18px;"><a href="{$pageUrl}" style="color:#fbbf24;text-decoration:none;">{$pageUrl}</a></p>
         <ol style="margin:0;padding-left:18px;line-height:1.4;">{$itemsHtml}</ol>
-        <p style="margin:18px 0 0;color:#64748b;font-size:12px;">Sent by <a href="{$appUrl}" style="color:#fbbf24;text-decoration:none;">Puerto Rico Beach Finder</a>.</p>
+        <p style="margin:18px 0 0;color:#64748b;font-size:12px;">Sent by <a href="{$appUrl}" style="color:#fbbf24;text-decoration:none;">AJI</a>.</p>
       </div>
     </div>
   </div>

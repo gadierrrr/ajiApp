@@ -1,5 +1,5 @@
 /**
- * Beach Finder analytics wrapper (Umami-compatible).
+ * AJI analytics wrapper (Umami-compatible).
  *
  * Goals:
  * - Never break UX when analytics is blocked/disabled.
@@ -13,7 +13,7 @@
   var clientProbeSent = false;
 
   function getMeta() {
-    return window.BeachFinderMeta || { authenticated: 0 };
+    return window.AJIAppMeta || { authenticated: 0 };
   }
 
   function getConfig() {

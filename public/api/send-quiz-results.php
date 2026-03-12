@@ -88,7 +88,7 @@ $html = <<<HTML
       <div style="padding:22px 24px;color:#e2e8f0;">
         <p style="margin:0 0 18px;"><a href="{$resultsUrl}" style="color:#fbbf24;text-decoration:none;\">{$resultsUrl}</a></p>
         <ol style="margin:0;padding-left:18px;line-height:1.4;">{$itemsHtml}</ol>
-        <p style="margin:18px 0 0;color:#64748b;font-size:12px;">Sent by <a href="{$appUrl}" style="color:#fbbf24;text-decoration:none;\">Puerto Rico Beach Finder</a>.</p>
+        <p style="margin:18px 0 0;color:#64748b;font-size:12px;">Sent by <a href="{$appUrl}" style="color:#fbbf24;text-decoration:none;\">AJI</a>.</p>
       </div>
     </div>
   </div>

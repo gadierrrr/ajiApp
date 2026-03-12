@@ -102,7 +102,7 @@ php scripts/migrate.php --include-manual
 Use the public docroot:
 
 ```bash
-php -S localhost:8082 -t public scripts/dev-router.php
+php -S localhost:8084 -t public scripts/dev-router.php
 ```
 
 ## Agent guardrails

@@ -7,7 +7,7 @@ require_once APP_ROOT . '/inc/security_headers.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Denied | Beach Finder Admin</title>
+    <title>Access Denied | AJI Admin</title>
     <script src="https://cdn.tailwindcss.com" <?= cspNonceAttr() ?>></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -26,7 +26,7 @@ require_once APP_ROOT . '/inc/security_headers.php';
         <div class="space-y-4">
             <a href="/"
                class="block w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                Go to Beach Finder
+                Go to AJI
             </a>
 
             <a href="/logout"

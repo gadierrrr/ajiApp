@@ -1,7 +1,7 @@
 {
-  "name": "Puerto Rico Beach Finder",
-  "short_name": "Beach Finder",
-  "description": "Discover 230+ beautiful beaches across Puerto Rico. Find your perfect beach with real-time weather, reviews, and personalized recommendations.",
+  "name": "AJI - Explore Puerto Rico",
+  "short_name": "AJI",
+  "description": "Discover beaches, rivers, waterfalls, trails, restaurants, and photo spots across Puerto Rico.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#132024",
@@ -64,30 +64,30 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Beach Finder Home"
+      "label": "AJI Home"
     }
   ],
   "categories": ["travel", "lifestyle", "navigation"],
   "shortcuts": [
     {
-      "name": "Find Nearby",
-      "short_name": "Nearby",
-      "description": "Find beaches near you",
-      "url": "/?action=nearby",
+      "name": "Explore",
+      "short_name": "Explore",
+      "description": "Explore all places in Puerto Rico",
+      "url": "/explore",
       "icons": [{"src": "/assets/icons/icon-96x96.png", "sizes": "96x96"}]
     },
     {
       "name": "My Profile",
       "short_name": "Profile",
       "description": "View your favorites and reviews",
-      "url": "/profile.php",
+      "url": "/profile",
       "icons": [{"src": "/assets/icons/icon-96x96.png", "sizes": "96x96"}]
     },
     {
-      "name": "Compare Beaches",
-      "short_name": "Compare",
-      "description": "Compare beaches side by side",
-      "url": "/compare.php",
+      "name": "Find Nearby",
+      "short_name": "Nearby",
+      "description": "Find places near you",
+      "url": "/?action=nearby",
       "icons": [{"src": "/assets/icons/icon-96x96.png", "sizes": "96x96"}]
     }
   ],

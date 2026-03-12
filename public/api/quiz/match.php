@@ -9,7 +9,7 @@
 require_once $_SERVER['DOCUMENT_ROOT'] . '/../bootstrap.php';
 
 require_once APP_ROOT . '/inc/session.php';
-if (isset($_COOKIE['BEACH_FINDER_SESSION']) && session_status() === PHP_SESSION_NONE) {
+if (isset($_COOKIE['AJI_APP_SESSION']) && session_status() === PHP_SESSION_NONE) {
     session_cache_limiter('');
     session_start();
 }

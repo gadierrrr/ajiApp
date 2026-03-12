@@ -1,12 +1,12 @@
 /**
- * Share functionality for Beach Finder
+ * Share functionality for AJI
  */
 const S = window.BF_STRINGS || {};
 
 // Share beach using Web Share API or fallback to modal
 async function shareBeach(slug, name) {
     const url = `${window.location.origin}/beach/${slug}`;
-    const title = `${name} - ${S.share_brand || 'Puerto Rico Beach Finder'}`;
+    const title = `${name} - ${S.share_brand || 'AJI'}`;
     const text = (S.share_check_out || 'Check out :name in Puerto Rico!').replace(':name', name);
 
     if (typeof window.bfTrack === 'function') {
@@ -38,7 +38,7 @@ function openShareModal(slug, name, url) {
     const shareUrl = url || `${window.location.origin}/beach/${slug}`;
     const encodedUrl = encodeURIComponent(shareUrl);
     const encodedText = encodeURIComponent((S.share_check_out || 'Check out :name in Puerto Rico!').replace(':name', name));
-    const encodedTitle = encodeURIComponent(`${name} - ${S.share_brand || 'Beach Finder'}`);
+    const encodedTitle = encodeURIComponent(`${name} - ${S.share_brand || 'AJI'}`);
 
     body.innerHTML = `
         <p class="text-gray-600 mb-4">${S.share_label || 'Share'} <strong>${escapeHtml(name)}</strong></p>

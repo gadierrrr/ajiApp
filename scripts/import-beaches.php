@@ -10,7 +10,7 @@ require_once __DIR__ . '/../inc/db.php';
 
 $jsonPath = '/home/deploy/prtd/data/beaches.json';
 
-echo "Beach Finder - Data Import\n";
+echo "AJI - Data Import\n";
 echo "==========================\n\n";
 
 // Check source file

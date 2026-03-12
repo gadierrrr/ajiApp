@@ -125,7 +125,10 @@
       "Read(//tmp/**)",
       "Bash(echo \"--- Safety Info ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(DISTINCT safety_info\\) FROM beaches WHERE safety_info IS NOT NULL AND safety_info <> ''\"\necho \"--- Best Time ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(DISTINCT best_time\\) FROM beaches WHERE best_time IS NOT NULL AND best_time <> ''\"\necho \"--- Parking Details ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(DISTINCT parking_details\\) FROM beaches WHERE parking_details IS NOT NULL AND parking_details <> ''\"\necho \"--- Features ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(*\\) FROM beach_features\"\necho \"--- Tips ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(*\\) FROM beach_tips\"\necho \"--- Unique tip patterns ---\"\nsqlite3 data/beach-finder.db \"SELECT COUNT\\(DISTINCT tip\\) FROM beach_tips\")",
       "Read(//var/log/nginx/**)",
-      "Bash(git status -u)"
+      "Bash(git status -u)",
+      "Bash(git -C /var/www/ajiApp diff --name-only)",
+      "Bash(sudo ufw:*)",
+      "Bash(gh repo:*)"
     ]
   }
 }

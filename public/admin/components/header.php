@@ -16,7 +16,7 @@ require_once APP_ROOT . '/inc/admin.php';
 requireAdmin();
 
 $user = currentUser();
-$appName = $_ENV['APP_NAME'] ?? 'Beach Finder';
+$appName = $_ENV['APP_NAME'] ?? 'AJI';
 
 // Current page for active nav
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
@@ -61,7 +61,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 <a href="/admin/" class="flex items-center gap-2">
                     <span class="text-2xl">🏖️</span>
                     <div>
-                        <span class="font-bold text-lg">Beach Finder</span>
+                        <span class="font-bold text-lg">AJI</span>
                         <span class="text-xs text-gray-400 block">Admin Panel</span>
                     </div>
                 </a>

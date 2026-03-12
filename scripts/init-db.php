@@ -8,7 +8,7 @@
 
 require_once __DIR__ . '/../inc/db.php';
 
-echo "Initializing Beach Finder database...\n";
+echo "Initializing AJI database...\n";
 
 $db = getDB();
 

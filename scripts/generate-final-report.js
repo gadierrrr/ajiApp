@@ -26,7 +26,7 @@ for (const file of files) {
     if (!report.categories) continue;
 
     const url = report.finalUrl || report.requestedUrl || 'unknown';
-    const urlPath = url.replace('https://www.puertoricobeachfinder.com', '');
+    const urlPath = url.replace('https://www.puertoricobeachfinder.com', '').replace('https://www.aji.app', '');
 
     allResults.push({
         url: urlPath,
@@ -87,7 +87,7 @@ const accessibilityIssues = allResults
     .sort((a, b) => a.accessibility - b.accessibility);
 
 // Generate markdown report
-const markdown = `# Puerto Rico Beach Finder - Comprehensive Audit Report
+const markdown = `# AJI - Comprehensive Audit Report
 
 **Generated:** ${new Date().toLocaleString()}
 **Total Pages Audited:** ${stats.totalPages}

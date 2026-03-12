@@ -90,7 +90,7 @@ function plunkRequest(string $method, string $path, ?array $payload = null, bool
 
 function plunkSendEmail(string $to, string $subject, string $html, array $options = []): array {
     $fromAddress = (string) ($options['from_address'] ?? '');
-    $fromName = (string) ($options['from_name'] ?? (env('APP_NAME', 'Beach Finder') ?? 'Beach Finder'));
+    $fromName = (string) ($options['from_name'] ?? (env('APP_NAME', 'AJI') ?? 'AJI'));
 
     if ($fromAddress === '') {
         $appUrl = (string) env('APP_URL', 'https://puertoricobeachfinder.com');

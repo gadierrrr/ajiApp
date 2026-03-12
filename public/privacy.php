@@ -7,7 +7,7 @@ require_once APP_ROOT . '/inc/i18n.php';
 
 $lang = getCurrentLanguage();
 $pageTitle = $lang === 'es' ? 'Política de Privacidad' : 'Privacy Policy';
-$pageDescription = $lang === 'es' ? 'Política de Privacidad de Puerto Rico Beach Finder.' : 'Privacy Policy for Puerto Rico Beach Finder.';
+$pageDescription = $lang === 'es' ? 'Política de Privacidad de AJI.' : 'Privacy Policy for AJI.';
 $pageTheme = 'light';
 
 $pageShellMode = 'start';

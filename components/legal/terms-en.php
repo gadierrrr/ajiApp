@@ -4,7 +4,7 @@
 
     <div class="prose prose-slate max-w-none">
         <p>
-            These Terms of Service govern your use of Puerto Rico Beach Finder (the "Service"). By accessing or using the
+            These Terms of Service govern your use of AJI (the "Service"). By accessing or using the
             Service, you agree to these Terms.
         </p>
 

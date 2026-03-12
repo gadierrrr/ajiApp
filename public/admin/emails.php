@@ -12,7 +12,7 @@ $pageSubtitle = 'Manage and customize email templates';
 include __DIR__ . '/components/header.php';
 
 $user = currentUser();
-$appName = $_ENV['APP_NAME'] ?? 'Puerto Rico Beach Finder';
+$appName = $_ENV['APP_NAME'] ?? 'AJI';
 $appUrl = $_ENV['APP_URL'] ?? 'https://puertoricobeachfinder.com';
 
 // Handle form submissions

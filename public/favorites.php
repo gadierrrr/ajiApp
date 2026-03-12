@@ -117,7 +117,7 @@ include APP_ROOT . '/components/header.php';
 </div>
 
 <script <?= cspNonceAttr() ?>>
-window.BeachFinder = {
+window.AJIApp = {
     beaches: <?= json_encode($favorites) ?>,
     userFavorites: <?= json_encode($userFavorites) ?>,
     isAuthenticated: true,

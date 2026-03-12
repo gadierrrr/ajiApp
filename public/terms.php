@@ -7,7 +7,7 @@ require_once APP_ROOT . '/inc/i18n.php';
 
 $lang = getCurrentLanguage();
 $pageTitle = $lang === 'es' ? 'Términos de Servicio' : 'Terms of Service';
-$pageDescription = $lang === 'es' ? 'Términos de Servicio de Puerto Rico Beach Finder.' : 'Terms of Service for Puerto Rico Beach Finder.';
+$pageDescription = $lang === 'es' ? 'Términos de Servicio de AJI.' : 'Terms of Service for AJI.';
 $pageTheme = 'light';
 
 $pageShellMode = 'start';

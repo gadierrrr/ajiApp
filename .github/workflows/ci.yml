@@ -26,9 +26,9 @@ jobs:
       - name: Prepare CI environment
         run: |
           cat > .env <<'ENV'
-          DB_PATH=/tmp/beach-finder-ci.db
-          APP_URL=http://localhost:8082
-          APP_NAME=Beach Finder CI
+          DB_PATH=/tmp/aji-app-ci.db
+          APP_URL=http://localhost:8084
+          APP_NAME=AJI CI
           GOOGLE_MAPS_API_KEY=test-google-key
           GOOGLE_CLIENT_ID=test-google-client-id
           GOOGLE_CLIENT_SECRET=test-google-client-secret
@@ -71,15 +71,15 @@ jobs:
 
       - name: Verify analytics guardrails
         run: |
-          php -S 127.0.0.1:8082 -t public scripts/dev-router.php >/tmp/beach-finder-ci-server.log 2>&1 &
+          php -S 127.0.0.1:8084 -t public scripts/dev-router.php >/tmp/aji-app-ci-server.log 2>&1 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID"' EXIT
           sleep 2
           php scripts/check-analytics-umami.php \
-            --urls=http://127.0.0.1:8082/,http://127.0.0.1:8082/best-beaches \
+            --urls=http://127.0.0.1:8084/,http://127.0.0.1:8084/best-beaches \
             --expect-website-id=ci-umami-website-id \
             --expect-script-host=cloud.umami.is
-          curl -fsS "http://127.0.0.1:8082/api/health/analytics.php" >/tmp/analytics-health.json
+          curl -fsS "http://127.0.0.1:8084/api/health/analytics.php" >/tmp/analytics-health.json
           php -r '$d=json_decode(file_get_contents("/tmp/analytics-health.json"), true); if(!is_array($d) || ($d["ok"] ?? false) !== true){fwrite(STDERR, "Analytics health endpoint returned unhealthy status\n"); exit(1);} echo "Analytics health endpoint OK\n";'
 
       - name: Ensure no hardcoded Google keys in active code

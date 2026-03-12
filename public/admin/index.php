@@ -6,7 +6,7 @@
 require_once $_SERVER['DOCUMENT_ROOT'] . '/../bootstrap.php';
 
 $pageTitle = 'Dashboard';
-$pageSubtitle = 'Overview of your Beach Finder site';
+$pageSubtitle = 'Overview of your AJI site';
 
 include __DIR__ . '/components/header.php';
 

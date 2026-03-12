@@ -41,7 +41,7 @@ function probeUrl(string $url, int $timeoutSeconds = 5, bool $includeBody = fals
             'method' => 'GET',
             'timeout' => $timeoutSeconds,
             'ignore_errors' => true,
-            'header' => "User-Agent: beach-finder-analytics-health/1.0\r\nAccept: text/html,application/json\r\n",
+            'header' => "User-Agent: aji-app-analytics-health/1.0\r\nAccept: text/html,application/json\r\n",
         ],
     ]);
 

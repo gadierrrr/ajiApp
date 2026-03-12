@@ -279,7 +279,7 @@
                 clearMap();
             }
 
-            const center = window.BeachFinder?.mapCenter || DEFAULT_CENTER;
+            const center = window.AJIApp?.mapCenter || DEFAULT_CENTER;
             const map = new maplibregl.Map({
                 container: context.mapContainerId,
                 style: MAP_STYLE_URL,

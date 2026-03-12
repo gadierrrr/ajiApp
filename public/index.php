@@ -1,6 +1,6 @@
 <?php
 /**
- * Beach Finder - Main Page
+ * AJI App - Main Page
  * Discover Puerto Rico's beaches
  */
 
@@ -593,7 +593,7 @@ function scrollCarousel(id, direction) {
 
 <!-- Pass data to JavaScript (beaches lazy-loaded for performance) -->
 <script <?= cspNonceAttr() ?>>
-window.BeachFinder = {
+window.AJIApp = {
     beaches: [],
     beachesLoaded: false,
     selectedTags: <?= json_encode($selectedTags) ?>,
@@ -650,7 +650,7 @@ window.BeachFinder = {
     // On page load: scroll if filters are active or hash is #beaches
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (window.BeachFinder.hasActiveFilters || window.location.hash === '#beaches' || urlParams.get('view') === 'map') {
+        if (window.AJIApp.hasActiveFilters || window.location.hash === '#beaches' || urlParams.get('view') === 'map') {
             // Small delay to ensure page is rendered
             setTimeout(scrollToResults, 100);
         }

@@ -38,7 +38,7 @@ $welcomeId = 'tpl_' . bin2hex(random_bytes(8));
 $welcomeVariables = json_encode([
     ['name' => 'name', 'description' => 'User\'s display name'],
     ['name' => 'email', 'description' => 'User\'s email address'],
-    ['name' => 'app_name', 'description' => 'Application name (Puerto Rico Beach Finder)'],
+    ['name' => 'app_name', 'description' => 'Application name (AJI)'],
     ['name' => 'app_url', 'description' => 'Application URL'],
     ['name' => 'activity_text', 'description' => 'Personalized activity recommendations (auto-generated)']
 ]);
